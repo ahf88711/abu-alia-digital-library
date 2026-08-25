@@ -17,6 +17,7 @@ def tmp_env(tmp_path, monkeypatch):
     monkeypatch.setenv("ABU_ALIA_DATABASE_URL", f"sqlite:///{db}")
     monkeypatch.setenv("ABU_ALIA_STORAGE_ROOT", str(tmp_path / "storage"))
     monkeypatch.setenv("ABU_ALIA_TMP_ROOT", str(tmp_path / "tmp"))
+    monkeypatch.setenv("ABU_ALIA_CACHE_ROOT", str(tmp_path / "cache"))
     monkeypatch.setenv("ABU_ALIA_SECRET_KEY", "test-secret")
     monkeypatch.setenv("ABU_ALIA_ADMIN_EMAIL", "admin@test.local")
     monkeypatch.setenv("ABU_ALIA_ADMIN_PASSWORD", "test-admin-pass")

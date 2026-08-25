@@ -33,6 +33,7 @@ from abu_alia.duplicates.score import score_duplicate
 from abu_alia.jobs.queue import enqueue
 from abu_alia.rights.eligibility import Eligibility, decide_eligibility
 from abu_alia.search.backend import index_work
+from abu_alia.net.http import RetryableHTTPError, is_retryable
 from abu_alia.storage.backend import key_for_hash, sha256_file, storage_from_settings
 from abu_alia.storage.validate import FileValidationError, validate_book_file
 
@@ -157,12 +158,18 @@ def run_ingest_item(session: Session, source_item_id: int) -> str:
 
         storage = storage_from_settings(settings)
         saved = []
+        download_errors = []
         for remote in files:
             dest = tmp_root / remote.filename
             try:
                 connector.download(remote, dest)
             except Exception as exc:
                 log_event(session, item, "download", "failed", str(exc))
+                download_errors.append(exc)
+                if is_retryable(exc) or isinstance(exc, RetryableHTTPError):
+                    item.status = "retrying"
+                    item.last_error = str(exc)[:2000]
+                    raise
                 continue
             try:
                 validated = validate_book_file(dest, expected=remote.fmt)
@@ -173,7 +180,10 @@ def run_ingest_item(session: Session, source_item_id: int) -> str:
             saved.append((dest, validated, digest, remote))
         if not saved:
             item.status = "failed"
-            item.last_error = "all files failed validation"
+            if download_errors:
+                item.last_error = str(download_errors[-1])[:2000]
+            else:
+                item.last_error = "all files failed validation"
             return "failed"
 
         license_row = _ensure_license(session, decision)
@@ -466,3 +476,49 @@ def _attribution(source_code: str, meta) -> str:
     if source_code == "internet_archive":
         return "الملف من أرشيف الإنترنت وفق الرخصة المرفقة مع العنصر."
     return ""
+
+
+def catalog_stats(session: Session) -> dict:
+    from sqlalchemy import func
+
+    from abu_alia.db.models import FileAsset, Job
+
+    published = (
+        session.execute(select(func.count()).select_from(Work).where(Work.publication_status == "published")).scalar()
+        or 0
+    )
+    pdf = session.execute(select(func.count()).select_from(FileAsset).where(FileAsset.format == "pdf")).scalar() or 0
+    epub = session.execute(select(func.count()).select_from(FileAsset).where(FileAsset.format == "epub")).scalar() or 0
+    failed = session.execute(select(func.count()).select_from(SourceItem).where(SourceItem.status == "failed")).scalar() or 0
+    quarantined = (
+        session.execute(select(func.count()).select_from(SourceItem).where(SourceItem.status == "quarantined")).scalar()
+        or 0
+    )
+    queued_jobs = (
+        session.execute(select(func.count()).select_from(Job).where(Job.status.in_(("queued", "retrying", "running")))).scalar()
+        or 0
+    )
+    discovered = session.execute(select(func.count()).select_from(SourceItem)).scalar() or 0
+    return {
+        "published": int(published),
+        "pdf": int(pdf),
+        "epub": int(epub),
+        "failed": int(failed),
+        "quarantined": int(quarantined),
+        "queued_jobs": int(queued_jobs),
+        "discovered": int(discovered),
+    }
+
+
+def requeue_failed(session: Session, *, limit: int = 50, source_code: Optional[str] = None) -> int:
+    stmt = select(SourceItem).where(SourceItem.status.in_(("failed", "retrying"))).order_by(SourceItem.id)
+    if source_code:
+        stmt = stmt.join(Source).where(Source.code == source_code)
+    items = session.execute(stmt.limit(limit)).scalars().all()
+    n = 0
+    for item in items:
+        item.status = "queued"
+        item.last_error = None
+        enqueue(session, "ingest_item", {"source_item_id": item.id}, priority=8)
+        n += 1
+    return n

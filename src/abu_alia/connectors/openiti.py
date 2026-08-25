@@ -3,15 +3,17 @@ from __future__ import annotations
 import csv
 import io
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Sequence
 
 from abu_alia.config import get_settings
 from abu_alia.connectors.base import DiscoveredItem, HttpMixin, RemoteFile, SourceMetadata
 from abu_alia.ingestion.epub_build import build_epub, mARkdown_to_chapters
+from abu_alia.net.http import RetryableHTTPError, get_with_fallback
 
-METADATA_URL = (
-    "https://raw.githubusercontent.com/OpenITI/RELEASE/master/metadata/"
-    "OpenITI_metadata_2025-1-9.tsv"
+METADATA_PATH = "metadata/OpenITI_metadata_2025-1-9.tsv"
+METADATA_URLS = (
+    "https://raw.githubusercontent.com/OpenITI/RELEASE/master/" + METADATA_PATH,
+    "https://cdn.jsdelivr.net/gh/OpenITI/RELEASE@master/" + METADATA_PATH,
 )
 
 
@@ -29,14 +31,26 @@ def century_repo(death_ah: int) -> str:
     return f"{bucket:04d}AH"
 
 
-def github_raw_url(local_path: str, death_ah: int) -> str:
+def _normalize_local_path(local_path: str) -> str:
+    path = (local_path or "").lstrip("/")
+    if not path.startswith("data/"):
+        path = "data/" + path
+    return path
+
+
+def candidate_urls(local_path: str, death_ah: int) -> List[str]:
     repo = century_repo(death_ah or 1)
-    path = local_path.lstrip("/")
-    if path.startswith("data/"):
-        rest = path
-    else:
-        rest = "data/" + path
-    return f"https://raw.githubusercontent.com/OpenITI/{repo}/master/{rest}"
+    rest = _normalize_local_path(local_path)
+    bases = [
+        f"https://raw.githubusercontent.com/OpenITI/{repo}/master/{rest}",
+        f"https://cdn.jsdelivr.net/gh/OpenITI/{repo}@master/{rest}",
+    ]
+    urls: List[str] = []
+    for base in bases:
+        urls.append(base)
+        for ext in (".completed", ".mARkdown"):
+            urls.append(base + ext)
+    return urls
 
 
 class OpenITIConnector(HttpMixin):
@@ -44,14 +58,21 @@ class OpenITIConnector(HttpMixin):
 
     def __init__(self) -> None:
         super().__init__()
-        self._min_interval = 0.4
+        self._min_interval = 0.35
         self._by_id: Dict[str, Dict[str, str]] = {}
 
     def _load_rows(self) -> List[Dict[str, str]]:
-        self.throttle()
-        resp = self._client.get(METADATA_URL)
-        resp.raise_for_status()
-        reader = csv.DictReader(io.StringIO(resp.text), delimiter="\t")
+        settings = get_settings()
+        settings.cache_root.mkdir(parents=True, exist_ok=True)
+        cache = settings.cache_root / "openiti_metadata_2025-1-9.tsv"
+        text = None
+        if cache.exists() and cache.stat().st_size > 500_000:
+            text = cache.read_text(encoding="utf-8", errors="replace")
+        else:
+            resp = get_with_fallback(self._client, METADATA_URLS, attempts=settings.http_attempts)
+            text = resp.text
+            cache.write_text(text, encoding="utf-8")
+        reader = csv.DictReader(io.StringIO(text), delimiter="\t")
         return list(reader)
 
     def discover(self, cursor: Optional[str] = None) -> Iterator[DiscoveredItem]:
@@ -70,6 +91,12 @@ class OpenITIConnector(HttpMixin):
             death = death_year_from_uri(row.get("version_uri") or book)
             if death and death > settings.openiti_max_death_ah:
                 continue
+            try:
+                toks = int(float(row.get("tok_length") or 0))
+            except (TypeError, ValueError):
+                toks = 0
+            if toks > settings.openiti_max_tokens:
+                continue
             status = (row.get("status") or "").lower()
             local = row.get("local_path") or ""
             score = 0
@@ -87,9 +114,10 @@ class OpenITIConnector(HttpMixin):
                 best[book] = row
         for book, row in best.items():
             self._by_id[book] = row
+            death = death_year_from_uri(row.get("version_uri") or book) or 1
             yield DiscoveredItem(
                 external_id=book,
-                url=github_raw_url(row.get("local_path") or "", death_year_from_uri(row.get("version_uri") or book) or 1),
+                url=candidate_urls(row.get("local_path") or "", death)[0],
                 title=row.get("title_ar") or book,
                 raw=row,
             )
@@ -116,29 +144,28 @@ class OpenITIConnector(HttpMixin):
 
     def discover_files(self, item: DiscoveredItem, meta: SourceMetadata) -> List[RemoteFile]:
         row = item.raw or {}
-        url = github_raw_url(row.get("local_path") or "", meta.death_year_ah or 1)
-        return [RemoteFile(url=url, fmt="epub", filename=f"{item.external_id}.epub", extra={"source": "openiti-text"})]
+        urls = candidate_urls(row.get("local_path") or "", meta.death_year_ah or 1)
+        return [
+            RemoteFile(
+                url=urls[0],
+                fmt="epub",
+                filename=f"{item.external_id}.epub",
+                extra={"source": "openiti-text", "urls": urls},
+            )
+        ]
 
     def download(self, remote: RemoteFile, dest: Path) -> Path:
-        if not remote.url:
+        urls: Sequence[str] = remote.extra.get("urls") or ([remote.url] if remote.url else [])
+        if not urls:
             raise RuntimeError("missing openiti url")
-        self.throttle()
-        resp = self._client.get(remote.url)
-        if resp.status_code == 404:
-            # try common extensions
-            for ext in (".completed", ".mARkdown", ""):
-                trial = remote.url if not ext else remote.url.rstrip("/") + ext
-                self.throttle()
-                resp = self._client.get(trial)
-                if resp.status_code == 200:
-                    break
-        resp.raise_for_status()
+        resp = get_with_fallback(self._client, list(urls), attempts=self._attempts)
         text = resp.text
+        if len(text.strip()) < 80:
+            raise RetryableHTTPError("openiti text too short")
         guessed_title, chapters = mARkdown_to_chapters(text)
-        title = dest.stem
         build_epub(
             dest,
-            title=guessed_title or title,
+            title=guessed_title or dest.stem,
             author="OpenITI",
             identifier="openiti:" + dest.stem,
             chapters=chapters[:80],

@@ -5,7 +5,7 @@ import logging
 
 from abu_alia.config import get_settings
 from abu_alia.db.session import init_db, session_scope
-from abu_alia.ingestion.pipeline import enqueue_discovery, run_discovery, run_ingest_item
+from abu_alia.ingestion.pipeline import catalog_stats, enqueue_discovery, requeue_failed, run_discovery, run_ingest_item
 from abu_alia.jobs.queue import claim_job, complete_job, fail_job
 from abu_alia.seed import seed_all
 from abu_alia.worker import HANDLERS, process_once
@@ -54,6 +54,37 @@ def cmd_init(_args: argparse.Namespace) -> None:
     print("initialized")
 
 
+def cmd_retry_failed(args: argparse.Namespace) -> None:
+    logging.basicConfig(level=logging.INFO)
+    settings = get_settings()
+    init_db(settings)
+    with session_scope() as session:
+        n = requeue_failed(session, limit=args.limit, source_code=args.source)
+        print(f"requeued {n} failed items")
+    processed = 0
+    while processed < args.limit:
+        if not process_once():
+            break
+        processed += 1
+    print(f"processed {processed} jobs")
+    with session_scope() as session:
+        print(catalog_stats(session))
+
+
+def cmd_harvest(args: argparse.Namespace) -> None:
+    from abu_alia.ingestion.harvest import harvest_loop
+
+    settings = get_settings()
+    harvest_loop(target=args.target or settings.harvest_target, batch=args.batch, source=args.source)
+
+
+def cmd_stats(_args: argparse.Namespace) -> None:
+    settings = get_settings()
+    init_db(settings)
+    with session_scope() as session:
+        print(catalog_stats(session))
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="abu-alia")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -70,6 +101,17 @@ def main() -> None:
     p_i.set_defaults(func=cmd_ingest)
     p_init = sub.add_parser("init")
     p_init.set_defaults(func=cmd_init)
+    p_r = sub.add_parser("retry-failed")
+    p_r.add_argument("--source", default=None)
+    p_r.add_argument("--limit", type=int, default=50)
+    p_r.set_defaults(func=cmd_retry_failed)
+    p_h = sub.add_parser("harvest")
+    p_h.add_argument("--source", default="openiti")
+    p_h.add_argument("--target", type=int, default=None)
+    p_h.add_argument("--batch", type=int, default=40)
+    p_h.set_defaults(func=cmd_harvest)
+    p_s = sub.add_parser("stats")
+    p_s.set_defaults(func=cmd_stats)
     args = parser.parse_args()
     args.func(args)
 

@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     database_url: str = f"sqlite:///{ROOT / 'data' / 'library.db'}"
     storage_root: Path = ROOT / "data" / "storage"
     tmp_root: Path = ROOT / "data" / "tmp"
+    cache_root: Path = ROOT / "data" / "cache"
     public_base_url: str = "http://127.0.0.1:8080"
     admin_email: str = "admin@localhost"
     admin_password: str = "change-me-now"
@@ -33,7 +34,11 @@ class Settings(BaseSettings):
     worker_concurrency: int = 1
     job_poll_seconds: float = 1.5
     job_max_attempts: int = 5
-    request_timeout_seconds: float = 45.0
+    request_timeout_seconds: float = 90.0
+    http_attempts: int = 6
+    harvest_target: int = 4000
+    harvest_batch: int = 40
+    openiti_max_tokens: int = 900000
     user_agent: str = (
         "AbuAliaDigitalLibrary/1.0 (+https://github.com/ahf88711/abu-alia-digital-library)"
     )

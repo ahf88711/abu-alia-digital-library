@@ -64,13 +64,20 @@ class HttpMixin:
 
     def __init__(self) -> None:
         settings = get_settings()
+        timeout = httpx.Timeout(
+            connect=20.0,
+            read=settings.request_timeout_seconds,
+            write=30.0,
+            pool=20.0,
+        )
         self._client = httpx.Client(
-            timeout=settings.request_timeout_seconds,
+            timeout=timeout,
             headers={"User-Agent": settings.user_agent},
             follow_redirects=True,
         )
         self._min_interval = 1.0
         self._last = 0.0
+        self._attempts = settings.http_attempts
 
     def throttle(self) -> None:
         now = time.monotonic()
@@ -78,6 +85,12 @@ class HttpMixin:
         if wait > 0:
             time.sleep(wait)
         self._last = time.monotonic()
+
+    def http_get(self, url: str) -> httpx.Response:
+        from abu_alia.net.http import request_with_retry
+
+        self.throttle()
+        return request_with_retry(self._client, "GET", url, attempts=self._attempts)
 
     def close(self) -> None:
         self._client.close()

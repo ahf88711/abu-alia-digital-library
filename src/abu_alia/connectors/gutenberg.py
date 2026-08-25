@@ -18,8 +18,7 @@ class GutenbergConnector(HttpMixin):
         self._min_interval = 2.0
 
     def discover(self, cursor: Optional[str] = None) -> Iterator[DiscoveredItem]:
-        self.throttle()
-        resp = self._client.get(CATALOG)
+        resp = self.http_get(CATALOG)
         resp.raise_for_status()
         reader = csv.DictReader(io.StringIO(resp.text))
         for row in reader:
@@ -72,9 +71,8 @@ class GutenbergConnector(HttpMixin):
     def download(self, remote: RemoteFile, dest: Path) -> Path:
         last_exc = None
         # GutenbergConnector.discover_files returns fallbacks; download tries one URL.
-        self.throttle()
         try:
-            resp = self._client.get(remote.url)
+            resp = self.http_get(remote.url)
             if resp.status_code == 404:
                 raise FileNotFoundError(remote.url)
             resp.raise_for_status()
