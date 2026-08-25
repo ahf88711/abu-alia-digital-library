@@ -105,16 +105,16 @@ SOURCES = [
         has_epub=False,
         has_api=True,
         has_direct_download=True,
-        crawling_method="REST search",
-        pagination_method="REST",
-        rate_limits="غير معلن",
-        robots_notes="واجهة REST كانت غير مستقرة أثناء البحث",
-        license_information="رخص ناشرين مفتوحة غالباً CC",
+        crawling_method="REST search + bitstreams",
+        pagination_method="offset/limit",
+        rate_limits="طلب واحد في الثانية",
+        robots_notes="REST عامة؛ يُستورد فقط ما له URI رخصة واضحة",
+        license_information="رخص ناشرين مفتوحة (CC) عند وجود URI",
         redistribution_status="verified_open_license",
-        connector_status="planned",
+        connector_status="active",
         enabled=False,
-        reliability="unknown",
-        notes="يُفعّل بعد استقرار الواجهة.",
+        reliability="medium",
+        notes="موصل جاهز ومتوقف أثناء حصاد OpenITI. لا يُنشر إلا بترخيص CC/PD صريح.",
     ),
     dict(
         code="safahat",
@@ -219,11 +219,12 @@ def _seed_sources(session: Session) -> None:
     for data in SOURCES:
         row = session.execute(select(Source).where(Source.code == data["code"])).scalar_one_or_none()
         if row:
-            if data["code"] == "wikisource_ar" and row.connector_status == "planned":
+            if data["code"] in ("wikisource_ar", "oapen") and row.connector_status == "planned":
                 row.connector_status = data["connector_status"]
                 row.has_epub = data["has_epub"]
                 row.formats = data["formats"]
                 row.notes = data["notes"]
+                row.enabled = False
             continue
         if data["code"] == "fixture" and settings.is_production:
             data = dict(data)
