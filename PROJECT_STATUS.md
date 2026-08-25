@@ -1,0 +1,23 @@
+# PROJECT_STATUS
+
+- **current phase:** core system verified locally; GitHub next; production deploy blocked without hosting credentials
+- **completed phases:** 1–36 locally (architecture, domain, db, storage, jobs, connectors, rights, pipeline, Arabic, search, classification, design system, public UI, readers, admin, automated tests)
+- **architecture:** modular FastAPI monolith + DB-backed worker; SQLite default / Postgres-ready; local object storage / S3 interface
+- **important decisions:** OpenITI as primary legitimate Arabic corpus (CC BY-NC-SA 4.0, death year ≤ 1300 AH); IA user PD marks are not trusted; Gutenberg catalog CSV only (no HTML scrape)
+- **tests:** 29 passed (`pytest tests`)
+- **sources researched:** OpenITI, Gutenberg, Internet Archive, OAPEN, Safahat/Hindawi, Wikisource AR, QDL, KFNL, Shamela/Waqfeya (prohibited as rehost)
+- **sources integrated:** fixture, openiti, gutenberg, internet_archive
+- **source failures:** 3 OpenITI items failed file validation in the first batch of 5; OAPEN REST returned 500 during research
+- **books (verified local catalog, not fabricated):**
+  - unique published works: **4**
+  - PDF files: **2**
+  - EPUB files: **4**
+  - both formats: **2** (fixture titles)
+  - failed imports: **3**
+  - quarantined: **0**
+  - duplicates rejected: **0**
+- **titles published:** كليلة ودمنة؛ البخلاء؛ ديوان أبو طالب؛ معلقة عمرو بن كلثوم
+- **storage:** `data/storage/` (gitignored)
+- **Git:** initializing
+- **deployment:** `render.yaml` written; no Render/Fly/Railway token in this environment — public URL not claimed
+- **next:** push GitHub; scale OpenITI ingestion on a machine with disk; attach Postgres + persistent storage for production

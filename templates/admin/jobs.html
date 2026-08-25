@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}الوظائف{% endblock %}
+{% block content %}
+<div class="wrap admin" style="padding:1rem 0">
+  <p><a href="/إدارة">رجوع</a></p>
+  <h1>طابور العمل</h1>
+  <table>
+    {% for j in jobs %}
+      <tr><td>{{ j.id }}</td><td>{{ j.job_type }}</td><td>{{ j.status }}</td><td>{{ j.attempts }}/{{ j.max_attempts }}</td><td>{{ (j.last_error or '')[:180] }}</td></tr>
+    {% endfor %}
+  </table>
+  <h2>فشل الاستيراد</h2>
+  <table>
+    {% for f in failed %}
+      <tr><td>{{ f.title }}</td><td>{{ f.last_error }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

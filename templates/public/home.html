@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}مكتبة أبو علياء الرقمية{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-card">
+      <div class="kicker">مكتبة عربية للقراءة المباشرة</div>
+      <h1>مكتبة أبو علياء الرقمية</h1>
+      <p class="muted">كتب عربية مؤهلة تُستضاف هنا وتُقرأ من هنا. ليست دليل روابط.</p>
+      <form class="search-hero" action="/بحث" method="get">
+        <input type="search" name="q" placeholder="ابحث بالعنوان أو المؤلف أو التصنيف…" aria-label="بحث في المكتبة" required>
+        <button class="btn" type="submit">ابحث</button>
+      </form>
+      <div class="stats">
+        <span>{{ book_count }} كتاباً</span>
+        <span>{{ author_count }} مؤلفاً</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>التصنيفات</h2><a href="/تصنيفات">الدليل الكامل</a></div>
+    <div class="cats">
+      {% for c in categories %}
+        <a class="cat-chip" href="/تصنيفات/{{ c.path }}"><strong>{{ c.name_ar }}</strong></a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>أضيف حديثاً</h2><a href="/كتب-جديدة">المزيد</a></div>
+    {% if latest %}
+    <div class="grid">
+      {% for work in latest %}{% include "partials/book_card.html" %}{% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">لا توجد كتب منشورة بعد. يجري بناء المجموعة من مصادر مشروعة فقط.</div>
+    {% endif %}
+  </div>
+</section>
+
+{% if popular %}
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>الأكثر تحميلاً</h2><a href="/الأكثر-تحميلا">المزيد</a></div>
+    <div class="grid">{% for work in popular %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+
+{% if viewed %}
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>الأكثر مشاهدة</h2><a href="/الأكثر-مشاهدة">المزيد</a></div>
+    <div class="grid">{% for work in viewed %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

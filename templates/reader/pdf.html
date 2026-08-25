@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>قراءة {{ work.title }}</title>
+  <link rel="stylesheet" href="/static/css/library.css">
+</head>
+<body class="reader-shell">
+  <div class="reader-bar">
+    <a href="/كتب/{{ work.slug }}">رجوع</a>
+    <div>{{ work.title }}</div>
+    <div>
+      <button type="button" id="prev">السابق</button>
+      <span id="pg">1</span>
+      <button type="button" id="next">التالي</button>
+      <a href="/ملفات/{{ work.slug }}/pdf?dl=1">تنزيل</a>
+    </div>
+  </div>
+  <div class="reader-stage" id="pdf-canvas-wrap"><canvas id="pdf-canvas"></canvas></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.min.mjs" type="module"></script>
+  <script type="module">
+    import * as pdfjsLib from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.min.mjs";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs";
+    const url = "/ملفات/{{ work.slug }}/pdf";
+    const canvas = document.getElementById("pdf-canvas");
+    const ctx = canvas.getContext("2d");
+    let pdf = await pdfjsLib.getDocument(url).promise;
+    let pageNum = 1;
+    async function render() {
+      const page = await pdf.getPage(pageNum);
+      const wrap = document.getElementById("pdf-canvas-wrap");
+      const unscaled = page.getViewport({ scale: 1 });
+      const scale = wrap.clientWidth / unscaled.width;
+      const viewport = page.getViewport({ scale: Math.max(scale, 1.1) });
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      document.getElementById("pg").textContent = pageNum + " / " + pdf.numPages;
+    }
+    document.getElementById("prev").onclick = () => { if (pageNum > 1) { pageNum--; render(); } };
+    document.getElementById("next").onclick = () => { if (pageNum < pdf.numPages) { pageNum++; render(); } };
+    render();
+  </script>
+</body>
+</html>

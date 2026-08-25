@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: abu-alia-digital-library
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: PYTHONPATH=src python -m abu_alia serve --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: ABU_ALIA_ENV
+        value: production
+      - key: PYTHONPATH
+        value: src
+  - type: worker
+    name: abu-alia-worker
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: PYTHONPATH=src python -m abu_alia worker
+    envVars:
+      - key: ABU_ALIA_ENV
+        value: production
+      - key: PYTHONPATH
+        value: src

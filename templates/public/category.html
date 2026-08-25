@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name_ar }} — مكتبة أبو علياء الرقمية{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs"><a href="/تصنيفات">التصنيفات</a> / {{ category.name_ar }}</nav>
+  <h1>{{ category.name_ar }}</h1>
+  {% if category.description %}<p class="muted">{{ category.description }}</p>{% endif %}
+  {% if children %}
+  <div class="cats" style="margin-bottom:1rem">
+    {% for child in children %}
+      <a class="cat-chip" href="/تصنيفات/{{ child.path }}"><strong>{{ child.name_ar }}</strong></a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if works %}
+  <div class="grid">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  <nav class="pager">
+    {% if page>1 %}<a href="?page={{ page-1 }}">السابق</a>{% endif %}
+    <span>{{ page }} / {{ pages }}</span>
+    {% if page<pages %}<a href="?page={{ page+1 }}">التالي</a>{% endif %}
+  </nav>
+  {% else %}
+  <div class="empty">لا توجد كتب في هذا التصنيف بعد.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ work.title }} — مكتبة أبو علياء الرقمية{% endblock %}
+{% block description %}{{ (work.description or work.title)[:160] }}{% endblock %}
+{% block extra_head %}
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Book","name":{{ work.title|tojson }},"inLanguage":"ar"}
+</script>
+{% endblock %}
+{% block content %}
+<div class="wrap">
+  <nav class="crumbs">
+    <a href="/">الرئيسية</a> /
+    {% set cat = primary_category(work) %}
+    {% if cat %}<a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a> /{% endif %}
+    <span>{{ work.title }}</span>
+  </nav>
+  <article class="detail">
+    <div class="detail-cover">
+      {% set c = cover_of(work) %}
+      {% if c %}<img src="/أغلفة/{{ work.id }}" alt="غلاف {{ work.title }}">{% endif %}
+    </div>
+    <div>
+      <h1>{{ work.title }}</h1>
+      {% if work.subtitle %}<p class="muted">{{ work.subtitle }}</p>{% endif %}
+      <p>
+        {% for contrib in work.contributors %}
+          <a href="/مؤلفون/{{ contrib.author.slug }}">{{ contrib.author.canonical_name }}</a>{% if not loop.last %}، {% endif %}
+        {% endfor %}
+      </p>
+      {% if work.description %}<p>{{ work.description }}</p>{% endif %}
+      <div class="actions">
+        {% if 'pdf' in formats_of(work) %}
+          <a class="btn" href="/قراءة/{{ work.slug }}/pdf">اقرأ PDF</a>
+          <a class="btn ghost" href="/ملفات/{{ work.slug }}/pdf?dl=1">تنزيل PDF</a>
+        {% endif %}
+        {% if 'epub' in formats_of(work) %}
+          <a class="btn gold" href="/قراءة/{{ work.slug }}/epub">اقرأ EPUB</a>
+          <a class="btn ghost" href="/ملفات/{{ work.slug }}/epub?dl=1">تنزيل EPUB</a>
+        {% endif %}
+        {% if user %}
+          <form method="post" action="/مكتبتي/{{ work.slug }}">
+            <button class="btn ghost" type="submit">{% if fav %}إزالة من مكتبتي{% else %}أضف إلى مكتبتي{% endif %}</button>
+          </form>
+        {% endif %}
+      </div>
+      <div class="meta-list">
+        {% if cat %}<div>التصنيف: <a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a></div>{% endif %}
+        {% for ed in work.editions %}
+          {% if ed.publisher %}<div>الناشر: {{ ed.publisher.name }}</div>{% endif %}
+          {% if ed.year %}<div>السنة: {{ ed.year }}</div>{% endif %}
+          {% if ed.isbn13 %}<div>ردمك: {{ ed.isbn13 }}</div>{% endif %}
+          {% if ed.page_count %}<div>الصفحات: {{ ed.page_count }}</div>{% endif %}
+          {% if ed.license %}<div>الترخيص: {{ ed.license.name_ar }}</div>{% endif %}
+          {% if ed.attribution %}<div>{{ ed.attribution }}</div>{% endif %}
+          {% for f in ed.files if not f.withdrawn %}
+            <div>{{ f.format|upper }} — {{ '%.1f'|format(f.size_bytes/1024/1024) }} م.ب</div>
+          {% endfor %}
+        {% endfor %}
+        <div>المشاهدات: {{ work.view_count }} · التنزيلات: {{ work.download_count }}</div>
+      </div>
+    </div>
+  </article>
+  {% if same_author %}
+  <div class="section-head"><h2>من المؤلف نفسه</h2></div>
+  <div class="grid">{% for work in same_author %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  {% endif %}
+  {% if related %}
+  <div class="section-head"><h2>كتب ذات صلة</h2></div>
+  <div class="grid">{% for work in related %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  {% endif %}
+</div>
+{% endblock %}

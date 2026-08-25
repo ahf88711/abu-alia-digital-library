@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}بحث متقدم — مكتبة أبو علياء الرقمية{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 style="margin-top:1.2rem">البحث المتقدم</h1>
+  <form action="/بحث" method="get" class="section">
+    <p><label>العبارة<br><input type="search" name="q" required></label></p>
+    <p><label>التصنيف<br>
+      <select name="cat">
+        <option value="">الكل</option>
+        {% for c in categories %}
+          <option value="{{ c.path }}">{{ c.name_ar }}</option>
+        {% endfor %}
+      </select>
+    </label></p>
+    <p><label>الصيغة<br>
+      <select name="fmt">
+        <option value="">الكل</option>
+        <option value="pdf">PDF</option>
+        <option value="epub">EPUB</option>
+      </select>
+    </label></p>
+    <p><label>الترتيب<br>
+      <select name="sort">
+        <option value="relevance">الصلة</option>
+        <option value="newest">الأحدث</option>
+        <option value="downloads">الأكثر تحميلاً</option>
+      </select>
+    </label></p>
+    <button class="btn" type="submit">تنفيذ البحث</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}تواصل معنا — مكتبة أبو علياء الرقمية{% endblock %}
+{% block content %}
+<div class="wrap" style="padding:1.2rem 0 2rem">
+  <h1>تواصل معنا</h1>
+  {% if sent %}
+    <div class="notice">وصلت رسالتك. شكراً لك.</div>
+  {% else %}
+  <form method="post">
+    <p><label>الاسم<br><input type="text" name="الاسم" required></label></p>
+    <p><label>البريد<br><input type="email" name="البريد"></label></p>
+    <p><label>الرسالة<br><textarea name="الرسالة" required></textarea></label></p>
+    <button class="btn" type="submit">إرسال</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

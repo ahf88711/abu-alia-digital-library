@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}المصادر{% endblock %}
+{% block content %}
+<div class="wrap admin" style="padding:1rem 0">
+  <p><a href="/إدارة">رجوع</a></p>
+  <h1>سجل المصادر</h1>
+  <table>
+    <tr><th>المصدر</th><th>إعادة التوزيع</th><th>الموصل</th><th></th></tr>
+    {% for s in sources %}
+    <tr>
+      <td>{{ s.name }}<br><small>{{ s.notes or '' }}</small></td>
+      <td>{{ s.redistribution_status }}</td>
+      <td>{{ s.connector_status }} / {{ 'مفعّل' if s.enabled else 'متوقف' }}</td>
+      <td>
+        {% if s.enabled %}
+        <form method="post" action="/إدارة/مصادر/{{ s.code }}/اكتشاف"><button class="btn" type="submit">اكتشاف</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

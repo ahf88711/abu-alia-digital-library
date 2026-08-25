@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}مكتبة أبو علياء الرقمية{% endblock %}</title>
+  <meta name="description" content="{% block description %}مكتبة عربية رقمية تستضيف كتباً مؤهلة للقراءة والتنزيل مباشرة.{% endblock %}">
+  <link rel="canonical" href="{{ request.url }}">
+  <meta property="og:title" content="{{ self.title() }}">
+  <meta property="og:locale" content="ar_AR">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/library.css">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<a class="skip" href="#main">تخطّ إلى المحتوى</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/">
+      <span class="mark">أ</span>
+      <span class="brand-text">
+        <strong>مكتبة أبو علياء</strong>
+        <span>الرقمية</span>
+      </span>
+    </a>
+    <div class="search-mini">
+      <form action="/بحث" method="get">
+        <input type="search" name="q" placeholder="ابحث عن كتاب أو مؤلف…" aria-label="بحث" value="{{ q|default('') }}">
+      </form>
+    </div>
+    <nav class="desk-nav" aria-label="القائمة الرئيسية">
+      <a href="/" {% if nav == '/' %}aria-current="page"{% endif %}>الرئيسية</a>
+      <a href="/كتب" {% if nav.startswith('/كتب') %}aria-current="page"{% endif %}>الكتب</a>
+      <a href="/تصنيفات" {% if nav.startswith('/تصنيف') %}aria-current="page"{% endif %}>التصنيفات</a>
+      <a href="/بحث" {% if nav.startswith('/بحث') %}aria-current="page"{% endif %}>البحث</a>
+      <a href="/مكتبتي">مكتبتي</a>
+      {% if user and user.is_admin %}<a href="/إدارة">الإدارة</a>{% endif %}
+      {% if user %}
+        <form action="/خروج" method="post"><button class="btn ghost" type="submit">خروج</button></form>
+      {% else %}
+        <a href="/دخول">دخول</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+<main id="main">
+  {% block content %}{% endblock %}
+</main>
+<footer class="site">
+  <div class="wrap foot-grid">
+    <div>مكتبة أبو علياء الرقمية — كتب عربية مؤهلة تُقرأ من المكتبة نفسها.</div>
+    <div>
+      <a href="/عن-المكتبة">عن المكتبة</a> ·
+      <a href="/تواصل">تواصل</a> ·
+      <a href="/الحقوق">الحقوق والتراخيص</a> ·
+      <a href="/الخصوصية">الخصوصية</a> ·
+      <a href="/الشروط">الشروط</a>
+    </div>
+  </div>
+</footer>
+<nav class="bottom-nav" aria-label="تنقل الجوال">
+  <a href="/" {% if nav == '/' %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>
+    الرئيسية
+  </a>
+  <a href="/تصنيفات" {% if nav.startswith('/تصنيف') %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+    التصنيفات
+  </a>
+  <a href="/بحث" {% if nav.startswith('/بحث') %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6"/><path d="m20 20-3.5-3.5"/></svg>
+    البحث
+  </a>
+  <a href="/مكتبتي" {% if nav.startswith('/مكتبتي') %}aria-current="page"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.6-7 10-7 10z"/></svg>
+    مكتبتي
+  </a>
+</nav>
+</body>
+</html>

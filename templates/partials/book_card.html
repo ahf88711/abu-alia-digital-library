@@ -1,0 +1,19 @@
+<article class="book-card">
+  <a class="cover" href="/كتب/{{ work.slug }}" aria-label="{{ work.title }}">
+    {% set c = cover_of(work) %}
+    {% if c %}
+      <img src="/أغلفة/{{ work.id }}" alt="" width="{{ c.width }}" height="{{ c.height }}">
+    {% endif %}
+  </a>
+  <div class="book-body">
+    <a class="book-title" href="/كتب/{{ work.slug }}">{{ work.title }}</a>
+    <div class="book-author">{{ primary_author(work) }}</div>
+    <div class="badges">
+      {% for f in formats_of(work) %}
+        <span class="badge">{{ f|upper }}</span>
+      {% endfor %}
+      {% set cat = primary_category(work) %}
+      {% if cat %}<span class="badge">{{ cat.name_ar }}</span>{% endif %}
+    </div>
+  </div>
+</article>

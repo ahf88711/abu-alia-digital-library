@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}إدارة الكتب{% endblock %}
+{% block content %}
+<div class="wrap admin" style="padding:1rem 0">
+  <p><a href="/إدارة">رجوع</a></p>
+  <h1>الكتب</h1>
+  <table>
+    <tr><th>العنوان</th><th>الحالة</th><th></th></tr>
+    {% for w in works %}
+    <tr>
+      <td>{{ w.title }}</td>
+      <td>{{ w.publication_status }}</td>
+      <td>
+        <form method="post" action="/إدارة/كتب/{{ w.id }}/نشر" style="display:inline"><button class="btn" type="submit">نشر</button></form>
+        <form method="post" action="/إدارة/كتب/{{ w.id }}/إخفاء" style="display:inline"><button class="btn ghost" type="submit">إخفاء</button></form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

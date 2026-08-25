@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}المؤلفون — مكتبة أبو علياء الرقمية{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 style="margin-top:1.2rem">دليل المؤلفين</h1>
+  <form class="filters" method="get">
+    <input type="search" name="q" value="{{ q }}" placeholder="ابحث عن مؤلف">
+    <button class="btn" type="submit">بحث</button>
+  </form>
+  <div class="cats">
+    {% for a in authors %}
+      <a class="cat-chip" href="/مؤلفون/{{ a.slug }}"><strong>{{ a.canonical_name }}</strong></a>
+    {% endfor %}
+  </div>
+  {% if not authors %}<div class="empty">لا مؤلفين مطابقين.</div>{% endif %}
+</div>
+{% endblock %}

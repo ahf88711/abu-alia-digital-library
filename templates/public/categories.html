@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}دليل التصنيفات — مكتبة أبو علياء الرقمية{% endblock %}
+{% block content %}
+<div class="wrap">
+  <h1 style="margin-top:1.2rem">دليل التصنيفات</h1>
+  <p class="muted">تصفّح المعرفة بالعربية وفق شجرة تصنيف قابلة للتعميق.</p>
+  {% for root in roots %}
+    <section class="section">
+      <h2><a href="/تصنيفات/{{ root.path }}">{{ root.name_ar }}</a></h2>
+      {% if root.description %}<p class="muted">{{ root.description }}</p>{% endif %}
+      <div class="cats">
+        {% for child in by_parent.get(root.id, []) %}
+          <a class="cat-chip" href="/تصنيفات/{{ child.path }}">
+            <strong>{{ child.name_ar }}</strong>
+            <small>{{ counts.get(child.id, 0) }} كتاباً</small>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+</div>
+{% endblock %}

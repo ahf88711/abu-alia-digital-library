@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}إعدادات النظام{% endblock %}
+{% block content %}
+<div class="wrap admin" style="padding:1rem 0">
+  <p><a href="/إدارة">رجوع</a></p>
+  <h1>إعدادات النظام</h1>
+  <ul>
+    <li>البيئة: {{ settings.env }}</li>
+    <li>قاعدة البيانات: {{ settings.database_url.split('://')[0] }}</li>
+    <li>التخزين: {{ settings.storage_root }}</li>
+    <li>حجم التخزين الحالي: {{ '%.1f'|format(storage_bytes/1024/1024) }} م.ب</li>
+    <li>حد الملف: {{ settings.max_file_bytes }} بايت</li>
+  </ul>
+</div>
+{% endblock %}

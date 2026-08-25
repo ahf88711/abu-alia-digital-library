@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>قراءة {{ work.title }}</title>
+  <link rel="stylesheet" href="/static/css/library.css">
+</head>
+<body class="reader-shell">
+  <div class="reader-bar">
+    <a href="/كتب/{{ work.slug }}">رجوع</a>
+    <div>{{ work.title }}</div>
+    <div>
+      <button type="button" id="prev">السابق</button>
+      <button type="button" id="next">التالي</button>
+      <button type="button" id="bigger">تكبير</button>
+      <a href="/ملفات/{{ work.slug }}/epub?dl=1">تنزيل</a>
+    </div>
+  </div>
+  <div class="reader-stage" id="epub-view"></div>
+  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+  <script>
+    const book = ePub("/ملفات/{{ work.slug }}/epub");
+    const rendition = book.renderTo("epub-view", { width: "100%", height: "100%", flow: "paginated", dir: "rtl" });
+    let fs = 100;
+    rendition.themes.default({ body: { direction: "rtl", textAlign: "right", background: "#f6f1e8", color: "#1a2332", fontSize: "18px", lineHeight: "1.9" }});
+    rendition.display();
+    document.getElementById("next").onclick = () => rendition.next();
+    document.getElementById("prev").onclick = () => rendition.prev();
+    document.getElementById("bigger").onclick = () => { fs += 10; rendition.themes.fontSize(fs + "%"); };
+  </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}طابور المراجعة{% endblock %}
+{% block content %}
+<div class="wrap admin" style="padding:1rem 0">
+  <p><a href="/إدارة">رجوع</a></p>
+  <h1>المراجعة والحجر</h1>
+  <h2>عناصر مفتوحة</h2>
+  <table>
+    {% for i in items %}
+    <tr>
+      <td>{{ i.kind }}</td><td>{{ i.reason }}</td>
+      <td>
+        <form method="post" action="/إدارة/مراجعة/{{ i.id }}/حل">
+          <button class="btn" type="submit">حل</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  <h2>حجر صحي</h2>
+  <table>
+    {% for q in quarantine %}
+      <tr><td>{{ q.title }}</td><td>{{ q.eligibility }}</td><td>{{ q.status }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

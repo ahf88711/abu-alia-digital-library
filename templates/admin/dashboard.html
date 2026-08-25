@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}لوحة الإدارة{% endblock %}
+{% block content %}
+<div class="wrap admin" style="padding:1rem 0 2rem">
+  <h1>لوحة الإدارة</h1>
+  <p class="muted"><a href="/إدارة/كتب">الكتب</a> · <a href="/إدارة/مصادر">المصادر</a> · <a href="/إدارة/مراجعة">المراجعة</a> · <a href="/إدارة/وظائف">الوظائف</a> · <a href="/إدارة/مؤلفون">المؤلفون</a> · <a href="/إدارة/إعدادات">الإعدادات</a></p>
+  <div class="stat-grid">
+    {% for k,v in stats.items() %}
+      <div class="stat"><span>{{ k }}</span><b>{{ v }}</b></div>
+    {% endfor %}
+  </div>
+  <h2>المصادر</h2>
+  <table>
+    <tr><th>الرمز</th><th>الحالة</th><th>مفعّل</th></tr>
+    {% for s in sources %}
+      <tr><td>{{ s.name }}</td><td>{{ s.connector_status }}</td><td>{{ 'نعم' if s.enabled else 'لا' }}</td></tr>
+    {% endfor %}
+  </table>
+  <h2>آخر الوظائف</h2>
+  <table>
+    <tr><th>النوع</th><th>الحالة</th><th>خطأ</th></tr>
+    {% for j in jobs %}
+      <tr><td>{{ j.job_type }}</td><td>{{ j.status }}</td><td>{{ j.last_error or '' }}</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}
