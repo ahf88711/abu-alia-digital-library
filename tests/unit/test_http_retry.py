@@ -1,6 +1,6 @@
 import httpx
 
-from abu_alia.net.http import RetryableHTTPError, request_with_retry
+from abu_alia.net.http import PermanentHTTPError, RetryableHTTPError, get_with_fallback, request_with_retry
 
 
 def test_retries_then_succeeds(monkeypatch):
@@ -31,3 +31,17 @@ def test_exhausts_retries(monkeypatch):
         assert False, "should have raised"
     except RetryableHTTPError:
         pass
+
+
+def test_fallback_404_is_permanent(monkeypatch):
+    monkeypatch.setattr("abu_alia.net.http.time.sleep", lambda _s: None)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, text="gone")
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        get_with_fallback(client, ["https://example.test/a", "https://example.test/b"], attempts=1)
+        assert False, "should have raised"
+    except PermanentHTTPError as exc:
+        assert "missing" in str(exc) or "404" in str(exc)

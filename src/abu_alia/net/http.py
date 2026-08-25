@@ -26,7 +26,13 @@ class RetryableHTTPError(Exception):
     """Raised after retries are exhausted for a transient failure."""
 
 
+class PermanentHTTPError(Exception):
+    """Raised when every fallback URL is gone (404/410). Do not retry."""
+
+
 def is_retryable(exc: BaseException) -> bool:
+    if isinstance(exc, PermanentHTTPError):
+        return False
     if isinstance(exc, RetryableHTTPError):
         return True
     return isinstance(exc, RETRY_EXC)
@@ -72,15 +78,22 @@ def get_with_fallback(
     timeout: Optional[httpx.Timeout] = None,
 ) -> httpx.Response:
     last: Optional[BaseException] = None
+    saw_transient = False
     for url in urls:
         try:
             resp = request_with_retry(client, "GET", url, attempts=attempts, timeout=timeout)
-            if resp.status_code == 404:
-                last = RetryableHTTPError(f"404 {url}")
+            if resp.status_code in (404, 410):
+                last = PermanentHTTPError(f"{resp.status_code} {url}")
                 continue
             resp.raise_for_status()
             return resp
-        except (RetryableHTTPError, httpx.HTTPError) as exc:
+        except RetryableHTTPError as exc:
+            saw_transient = True
             last = exc
             continue
+        except httpx.HTTPError as exc:
+            last = exc
+            continue
+    if not saw_transient:
+        raise PermanentHTTPError(f"permanent: all URLs missing: {list(urls)}") from last
     raise RetryableHTTPError(f"all URLs failed: {urls}") from last

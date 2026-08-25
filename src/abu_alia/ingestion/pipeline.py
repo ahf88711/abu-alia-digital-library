@@ -33,7 +33,7 @@ from abu_alia.duplicates.score import score_duplicate
 from abu_alia.jobs.queue import enqueue
 from abu_alia.rights.eligibility import Eligibility, decide_eligibility
 from abu_alia.search.backend import index_work
-from abu_alia.net.http import RetryableHTTPError, is_retryable
+from abu_alia.net.http import PermanentHTTPError, RetryableHTTPError, is_retryable
 from abu_alia.storage.backend import key_for_hash, sha256_file, storage_from_settings
 from abu_alia.storage.validate import FileValidationError, validate_book_file
 
@@ -181,7 +181,10 @@ def run_ingest_item(session: Session, source_item_id: int) -> str:
         if not saved:
             item.status = "failed"
             if download_errors:
-                item.last_error = str(download_errors[-1])[:2000]
+                msg = str(download_errors[-1])[:1960]
+                if any(isinstance(e, PermanentHTTPError) for e in download_errors) or msg.startswith("permanent:"):
+                    msg = "permanent: " + msg if not msg.startswith("permanent:") else msg
+                item.last_error = msg
             else:
                 item.last_error = "all files failed validation"
             return "failed"
@@ -517,6 +520,9 @@ def requeue_failed(session: Session, *, limit: int = 50, source_code: Optional[s
     items = session.execute(stmt.limit(limit)).scalars().all()
     n = 0
     for item in items:
+        err = (item.last_error or "").lower()
+        if err.startswith("permanent:") or "all urls missing" in err:
+            continue
         item.status = "queued"
         item.last_error = None
         enqueue(session, "ingest_item", {"source_item_id": item.id}, priority=8)
