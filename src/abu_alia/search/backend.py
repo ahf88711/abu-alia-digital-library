@@ -97,49 +97,57 @@ def search_works(
     if not ids:
         return {"total": 0, "items": [], "query": query, "normalized": q}
 
-    from sqlalchemy.orm import selectinload
     from sqlalchemy import select
-    from abu_alia.db.models import FileAsset, Edition, WorkCategory, Category
+    from abu_alia.db.models import Category, Edition, FileAsset, WorkCategory
+    from abu_alia.web.helpers import load_works_ordered
 
-    stmt = (
-        select(Work)
-        .where(Work.id.in_(ids))
-        .where(Work.publication_status == "published")
-        .options(
-            selectinload(Work.contributors),
-            selectinload(Work.editions).selectinload(Edition.files),
-            selectinload(Work.editions).selectinload(Edition.publisher),
-            selectinload(Work.categories).selectinload(WorkCategory.category),
-            selectinload(Work.covers),
-        )
+    allowed = set(
+        session.execute(
+            select(Work.id).where(Work.id.in_(ids), Work.publication_status == "published")
+        ).scalars()
     )
-    works = {w.id: w for w in session.execute(stmt).scalars().unique().all()}
-    ordered: List[Work] = []
-    for wid, _ in ranked:
-        w = works.get(wid)
-        if not w:
-            continue
-        if category_path:
-            if not any(
-                wc.category and (wc.category.path == category_path or wc.category.path.startswith(category_path + "/"))
-                for wc in w.categories
-            ):
-                continue
-        if format_filter:
-            fmts = {f.format for e in w.editions for f in e.files if not f.withdrawn}
-            if format_filter not in fmts:
-                continue
-        if year_from and (w.year or 0) < year_from:
-            continue
-        if year_to and w.year and w.year > year_to:
-            continue
-        ordered.append(w)
+    ids = [i for i in ids if i in allowed]
+    if category_path:
+        cat_ids = set(
+            session.execute(
+                select(WorkCategory.work_id)
+                .join(Category, Category.id == WorkCategory.category_id)
+                .where(
+                    WorkCategory.work_id.in_(ids),
+                    (Category.path == category_path) | (Category.path.startswith(category_path + "/")),
+                )
+            ).scalars()
+        )
+        ids = [i for i in ids if i in cat_ids]
+    if format_filter:
+        fmt_ids = set(
+            session.execute(
+                select(Edition.work_id)
+                .join(FileAsset, FileAsset.edition_id == Edition.id)
+                .where(
+                    Edition.work_id.in_(ids),
+                    FileAsset.format == format_filter,
+                    FileAsset.withdrawn.is_(False),
+                )
+            ).scalars()
+        )
+        ids = [i for i in ids if i in fmt_ids]
+    if year_from or year_to:
+        year_rows = session.execute(select(Work.id, Work.year).where(Work.id.in_(ids))).all()
+        years = {i: y for i, y in year_rows}
+        if year_from:
+            ids = [i for i in ids if (years.get(i) or 0) >= year_from]
+        if year_to:
+            ids = [i for i in ids if years.get(i) is None or years[i] <= year_to]
     if sort == "newest":
-        ordered.sort(key=lambda w: w.published_at or w.created_at, reverse=True)
-    elif sort == "downloads":
-        ordered.sort(key=lambda w: w.download_count, reverse=True)
-    elif sort == "views":
-        ordered.sort(key=lambda w: w.view_count, reverse=True)
-    total = len(ordered)
-    page = ordered[offset : offset + limit]
+        rows = session.execute(select(Work.id, Work.published_at, Work.created_at).where(Work.id.in_(ids))).all()
+        order = {i: (pub or created) for i, pub, created in rows}
+        ids.sort(key=lambda i: order.get(i) or utcnow(), reverse=True)
+    elif sort in ("downloads", "views"):
+        col = Work.download_count if sort == "downloads" else Work.view_count
+        scores = dict(session.execute(select(Work.id, col).where(Work.id.in_(ids))).all())
+        ids.sort(key=lambda i: scores.get(i) or 0, reverse=True)
+    total = len(ids)
+    page_ids = ids[offset : offset + limit]
+    page = load_works_ordered(session, page_ids)
     return {"total": total, "items": page, "query": query, "normalized": q}
