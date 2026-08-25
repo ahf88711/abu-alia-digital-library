@@ -11,11 +11,16 @@
       <td>{{ w.title }}</td>
       <td>{{ w.publication_status }}</td>
       <td>
-        <form method="post" action="/إدارة/كتب/{{ w.id }}/نشر" style="display:inline"><button class="btn" type="submit">نشر</button></form>
-        <form method="post" action="/إدارة/كتب/{{ w.id }}/إخفاء" style="display:inline"><button class="btn ghost" type="submit">إخفاء</button></form>
+        <form method="post" action="/إدارة/كتب/{{ w.id }}/نشر" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn" type="submit">نشر</button></form>
+        <form method="post" action="/إدارة/كتب/{{ w.id }}/إخفاء" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn ghost" type="submit">إخفاء</button></form>
       </td>
     </tr>
     {% endfor %}
   </table>
+  <nav class="pager" aria-label="ترقيم الصفحات">
+    {% if page and page>1 %}<a href="?page={{ page-1 }}">السابق</a>{% endif %}
+    {% if page and pages %}<span>{{ page }} / {{ pages }}</span>{% endif %}
+    {% if page and pages and page<pages %}<a href="?page={{ page+1 }}">التالي</a>{% endif %}
+  </nav>
 </div>
 {% endblock %}

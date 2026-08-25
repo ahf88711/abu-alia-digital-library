@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     bind_port: int = 8080
     rate_limit_search_per_minute: int = 90
     rate_limit_login_per_minute: int = 12
+    rate_limit_download_per_minute: int = 60
     default_locale: str = "ar"
     s3_bucket: Optional[str] = None
     s3_endpoint: Optional[str] = None

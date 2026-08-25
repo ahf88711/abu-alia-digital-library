@@ -1,3 +1,10 @@
+@font-face {
+  font-family: "Amiri";
+  src: url("/static/fonts/Amiri-Regular.ttf") format("truetype");
+  font-weight: 400 700;
+  font-display: swap;
+}
+
 :root {
   --ink: #1a2332;
   --ink-soft: #3d4a5c;
@@ -224,3 +231,14 @@ footer.site {
   .hero-card { padding: 2.4rem; }
   .cats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
+@media (max-width: 420px) {
+  .hero h1 { font-size: 1.65rem; }
+  .book-title { font-size: .95rem; }
+  .reader-bar { font-size: .82rem; gap: .35rem; }
+  .actions { flex-direction: column; }
+  .actions .btn, .actions form { width: 100%; }
+}
+.reader-bar { flex-wrap: wrap; }
+.reader-shell.night { background: #0e1116; color: #e8e0d4; }
+.reader-shell.night .reader-bar { background: #121821; }
+.reader-shell.night .reader-stage { background: #0e1116; }

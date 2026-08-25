@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional, Sequence
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
@@ -11,6 +11,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from abu_alia import __version__
+from abu_alia.auth.csrf import csrf_protect, set_csrf_cookie, token_for_request
 from abu_alia.auth.passwords import hash_password, verify_password
 from abu_alia.auth.sessions import clear_session, set_session, user_id_from_request
 from abu_alia.config import ROOT, get_settings
@@ -50,7 +51,9 @@ from abu_alia.web.helpers import (
     primary_category,
     work_query,
 )
+from abu_alia.storage.serve import file_response_with_range
 from abu_alia.web.rate_limit import limit
+from abu_alia.web.sanitize import plain_text
 
 TEMPLATES_DIR = ROOT / "templates"
 STATIC_DIR = ROOT / "static"
@@ -58,6 +61,7 @@ STATIC_DIR = ROOT / "static"
 app = FastAPI(title="مكتبة أبو علياء الرقمية", version=__version__)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+templates.env.filters["plain"] = plain_text
 
 
 def _ctx(request: Request, **kwargs):
@@ -66,6 +70,7 @@ def _ctx(request: Request, **kwargs):
         "user": getattr(request.state, "user", None),
         "app_name": "مكتبة أبو علياء الرقمية",
         "nav": request.url.path,
+        "csrf_token": token_for_request(request),
     }
     data.update(kwargs)
     return data
@@ -94,10 +99,15 @@ async def attach_user(request: Request, call_next):
 
                 if urlparse(origin).netloc != host:
                     return Response("رفض الطلب", status_code=403)
+    token_for_request(request)
     response = await call_next(request)
+    csrf_token = getattr(request.state, "csrf_token", None)
+    if csrf_token:
+        set_csrf_cookie(response, csrf_token)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
@@ -108,6 +118,8 @@ async def attach_user(request: Request, call_next):
         "worker-src 'self' blob: https://cdnjs.cloudflare.com; "
         "frame-src 'self' blob:;"
     )
+    if get_settings().is_production:
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response
 
 
@@ -145,29 +157,67 @@ def robots():
     return Response(body, media_type="text/plain; charset=utf-8")
 
 
+SITEMAP_PAGE_SIZE = 2000
+SITEMAP_STATIC = (
+    "/",
+    "/كتب",
+    "/تصنيفات",
+    "/مؤلفون",
+    "/بحث",
+    "/عن-المكتبة",
+    "/الحقوق",
+    "/الخصوصية",
+    "/الشروط",
+)
+
+
+def _urlset(locs: Sequence[str]) -> Response:
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+    for loc in locs:
+        xml.append(f"<url><loc>{loc}</loc></url>")
+    xml.append("</urlset>")
+    return Response("\n".join(xml), media_type="application/xml")
+
+
 @app.get("/sitemap.xml")
 def sitemap(db: Session = Depends(get_db)):
     settings = get_settings()
     base = settings.public_base_url.rstrip("/")
-    slugs = db.execute(select(Work.slug).where(Work.publication_status == "published")).scalars().all()
-    urls = [
-        "/",
-        "/كتب",
-        "/تصنيفات",
-        "/مؤلفون",
-        "/بحث",
-        "/عن-المكتبة",
-        "/الحقوق",
-        "/الخصوصية",
-        "/الشروط",
+    total = db.execute(select(func.count()).select_from(Work).where(Work.publication_status == "published")).scalar() or 0
+    pages = max(1, (int(total) + SITEMAP_PAGE_SIZE - 1) // SITEMAP_PAGE_SIZE)
+    if pages == 1:
+        return sitemap_page(1, db)
+    xml = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ]
-    xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for u in urls:
-        xml.append(f"<url><loc>{base}{u}</loc></url>")
-    for slug in slugs:
-        xml.append(f"<url><loc>{base}/كتب/{slug}</loc></url>")
-    xml.append("</urlset>")
+    for i in range(1, pages + 1):
+        xml.append(f"<sitemap><loc>{base}/sitemap-{i}.xml</loc></sitemap>")
+    xml.append("</sitemapindex>")
     return Response("\n".join(xml), media_type="application/xml")
+
+
+@app.get("/sitemap-{page}.xml")
+def sitemap_page(page: int, db: Session = Depends(get_db)):
+    settings = get_settings()
+    base = settings.public_base_url.rstrip("/")
+    total = db.execute(select(func.count()).select_from(Work).where(Work.publication_status == "published")).scalar() or 0
+    pages = max(1, (int(total) + SITEMAP_PAGE_SIZE - 1) // SITEMAP_PAGE_SIZE)
+    if page < 1 or page > pages:
+        raise HTTPException(404)
+    locs: List[str] = []
+    if page == 1:
+        locs.extend(base + path for path in SITEMAP_STATIC)
+    offset = (page - 1) * SITEMAP_PAGE_SIZE
+    slugs = db.execute(
+        select(Work.slug)
+        .where(Work.publication_status == "published")
+        .order_by(Work.id)
+        .offset(offset)
+        .limit(SITEMAP_PAGE_SIZE)
+    ).scalars().all()
+    locs.extend(f"{base}/كتب/{slug}" for slug in slugs)
+    return _urlset(locs)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -492,18 +542,30 @@ def collections_index(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/مجموعات/{slug}", response_class=HTMLResponse)
-def collection_page(slug: str, request: Request, db: Session = Depends(get_db)):
+def collection_page(
+    slug: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    صفحة: int = Query(1, alias="page"),
+):
     col = db.execute(select(Collection).where(Collection.slug == slug)).scalar_one_or_none()
     if col is None:
         raise HTTPException(404, "المجموعة غير موجودة")
-    ids = [r[0] for r in db.execute(select(CollectionWork.work_id).where(CollectionWork.collection_id == col.id)).all()]
-    works = db.execute(work_query(db).where(Work.id.in_(ids) if ids else Work.id == -1)).scalars().unique().all() if ids else []
+    id_stmt = (
+        select(CollectionWork.work_id)
+        .where(CollectionWork.collection_id == col.id)
+        .order_by(CollectionWork.id)
+    )
+    ids, page, pages, _total = page_ids(db, id_stmt, صفحة, 24)
+    works = load_works_ordered(db, ids)
     return templates.TemplateResponse(
         "public/collection.html",
         _ctx(
             request,
             collection=col,
             works=works,
+            page=page,
+            pages=pages,
             primary_author=primary_author,
             primary_category=primary_category,
             formats_of=formats_of,
@@ -534,7 +596,13 @@ def my_library(request: Request, db: Session = Depends(get_db)):
 
 
 @app.post("/مكتبتي/{slug}")
-def toggle_favorite(slug: str, request: Request, db: Session = Depends(get_db), user: User = Depends(require_user)):
+def toggle_favorite(
+    slug: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_user),
+    _: None = Depends(csrf_protect),
+):
     work = db.execute(select(Work).where(Work.slug == slug)).scalar_one_or_none()
     if not work:
         raise HTTPException(404)
@@ -563,6 +631,7 @@ def contact_post(
     الاسم: str = Form(...),
     البريد: str = Form(""),
     الرسالة: str = Form(...),
+    _: None = Depends(csrf_protect),
 ):
     db.add(
         AuditLog(
@@ -601,6 +670,7 @@ def login_post(
     db: Session = Depends(get_db),
     البريد: str = Form(...),
     كلمة_السر: str = Form(...),
+    _: None = Depends(csrf_protect),
 ):
     settings = get_settings()
     limit(request, "login", settings.rate_limit_login_per_minute)
@@ -628,7 +698,10 @@ def register_post(
     الاسم: str = Form(...),
     البريد: str = Form(...),
     كلمة_السر: str = Form(...),
+    _: None = Depends(csrf_protect),
 ):
+    settings = get_settings()
+    limit(request, "register", settings.rate_limit_login_per_minute)
     email = البريد.strip().lower()
     if db.execute(select(User).where(User.email == email)).scalar_one_or_none():
         return templates.TemplateResponse(
@@ -644,7 +717,7 @@ def register_post(
 
 
 @app.post("/خروج")
-def logout():
+def logout(_: None = Depends(csrf_protect)):
     resp = RedirectResponse("/", status_code=303)
     clear_session(resp)
     return resp
@@ -681,6 +754,8 @@ def read_epub(slug: str, request: Request, db: Session = Depends(get_db)):
 def stream_file(slug: str, fmt: str, request: Request, db: Session = Depends(get_db), تنزيل: int = Query(0, alias="dl")):
     if fmt not in ("pdf", "epub"):
         raise HTTPException(400)
+    settings = get_settings()
+    limit(request, "download", settings.rate_limit_download_per_minute)
     fa = _file_for(db, slug, fmt)
     if تنزيل:
         work = fa.edition.work
@@ -689,13 +764,8 @@ def stream_file(slug: str, fmt: str, request: Request, db: Session = Depends(get
     path = storage.path_for(fa.storage_key)
     if not path.exists():
         raise HTTPException(404)
-    filename = f"{slug}.{fmt}"
-    return FileResponse(
-        path,
-        media_type=fa.mime,
-        filename=filename if تنزيل else None,
-        headers={"Accept-Ranges": "bytes", "Cache-Control": "public, max-age=3600"},
-    )
+    filename = f"{slug}.{fmt}" if تنزيل else None
+    return file_response_with_range(path, request, media_type=fa.mime, download_name=filename)
 
 
 @app.get("/أغلفة/{work_id}")
@@ -735,13 +805,25 @@ def admin_home(request: Request, db: Session = Depends(get_db), admin: User = De
 
 
 @app.get("/إدارة/كتب", response_class=HTMLResponse)
-def admin_books(request: Request, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    works = db.execute(select(Work).order_by(Work.id.desc()).limit(200)).scalars().all()
-    return templates.TemplateResponse("admin/books.html", _ctx(request, works=works))
+def admin_books(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+    صفحة: int = Query(1, alias="page"),
+):
+    total = db.execute(select(func.count()).select_from(Work)).scalar() or 0
+    page, pages = paginate(int(total), صفحة, 50)
+    works = db.execute(select(Work).order_by(Work.id.desc()).offset((page - 1) * 50).limit(50)).scalars().all()
+    return templates.TemplateResponse("admin/books.html", _ctx(request, works=works, page=page, pages=pages))
 
 
 @app.post("/إدارة/كتب/{work_id}/نشر")
-def admin_publish(work_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def admin_publish(
+    work_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+    _: None = Depends(csrf_protect),
+):
     work = db.get(Work, work_id)
     if not work:
         raise HTTPException(404)
@@ -758,7 +840,12 @@ def admin_publish(work_id: int, db: Session = Depends(get_db), admin: User = Dep
 
 
 @app.post("/إدارة/كتب/{work_id}/إخفاء")
-def admin_hide(work_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def admin_hide(
+    work_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+    _: None = Depends(csrf_protect),
+):
     work = db.get(Work, work_id)
     if work:
         work.publication_status = "hidden"
@@ -772,7 +859,12 @@ def admin_sources(request: Request, db: Session = Depends(get_db), admin: User =
 
 
 @app.post("/إدارة/مصادر/{code}/اكتشاف")
-def admin_discover(code: str, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def admin_discover(
+    code: str,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+    _: None = Depends(csrf_protect),
+):
     enqueue_discovery(db, code)
     return RedirectResponse("/إدارة/مصادر", status_code=303)
 
@@ -791,6 +883,7 @@ def admin_resolve_review(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
     القرار: str = Form("resolved"),
+    _: None = Depends(csrf_protect),
 ):
     item = db.get(ReviewItem, item_id)
     if item:

@@ -24,6 +24,7 @@ LICENSE_TABLE = {
     "cc0": ("cc0-1.0", True, True, False, False, False),
     "cc-by": ("cc-by-4.0", True, True, True, False, False),
     "cc-by-sa": ("cc-by-sa-4.0", True, True, True, True, False),
+    "cc-by-sa-3.0": ("cc-by-sa-3.0", True, True, True, True, False),
     "cc-by-nc": ("cc-by-nc-4.0", True, False, True, False, True),
     "cc-by-nc-sa": ("cc-by-nc-sa-4.0", True, False, True, True, True),
     "cc-by-nd": ("cc-by-nd-4.0", True, True, True, False, False),
@@ -62,6 +63,8 @@ def classify_license(url_or_code: Optional[str]) -> Optional[LicenseMatch]:
             key = "cc-by-nc-nd"
         elif "by-nc" in raw:
             key = "cc-by-nc"
+        elif "by-sa/3.0" in raw or "by-sa/3.0/" in raw:
+            key = "cc-by-sa-3.0"
         elif "by-sa" in raw:
             key = "cc-by-sa"
         elif "by-nd" in raw:
@@ -154,6 +157,21 @@ def decide_eligibility(
             "eligibility": Eligibility.VERIFIED_OPEN_LICENSE,
             "reason": "openiti_cc_by_nc_sa_premodern",
             "license": classify_license("cc-by-nc-sa"),
+            "evidence": evidence,
+        }
+
+    if source_code == "wikisource_ar":
+        if match and match.allows_redistribution:
+            return {
+                "eligibility": Eligibility.VERIFIED_OPEN_LICENSE,
+                "reason": "wikisource_cc_by_sa",
+                "license": match,
+                "evidence": evidence,
+            }
+        return {
+            "eligibility": Eligibility.UNCERTAIN,
+            "reason": "wikisource_license_unknown",
+            "license": match,
             "evidence": evidence,
         }
 

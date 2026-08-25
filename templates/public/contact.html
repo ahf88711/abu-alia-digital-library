@@ -7,6 +7,7 @@
     <div class="notice">وصلت رسالتك. شكراً لك.</div>
   {% else %}
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <p><label>الاسم<br><input type="text" name="الاسم" required></label></p>
     <p><label>البريد<br><input type="email" name="البريد"></label></p>
     <p><label>الرسالة<br><textarea name="الرسالة" required></textarea></label></p>

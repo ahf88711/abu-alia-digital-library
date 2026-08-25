@@ -13,7 +13,7 @@
       <td>{{ s.connector_status }} / {{ 'مفعّل' if s.enabled else 'متوقف' }}</td>
       <td>
         {% if s.enabled %}
-        <form method="post" action="/إدارة/مصادر/{{ s.code }}/اكتشاف"><button class="btn" type="submit">اكتشاف</button></form>
+        <form method="post" action="/إدارة/مصادر/{{ s.code }}/اكتشاف"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn" type="submit">اكتشاف</button></form>
         {% endif %}
       </td>
     </tr>

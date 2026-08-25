@@ -27,7 +27,7 @@
           <a href="/مؤلفون/{{ contrib.author.slug }}">{{ contrib.author.canonical_name }}</a>{% if not loop.last %}، {% endif %}
         {% endfor %}
       </p>
-      {% if work.description %}<p>{{ work.description }}</p>{% endif %}
+      {% if work.description %}<p>{{ work.description|plain }}</p>{% endif %}
       <div class="actions">
         {% if 'pdf' in formats_of(work) %}
           <a class="btn" href="/قراءة/{{ work.slug }}/pdf">اقرأ PDF</a>
@@ -39,6 +39,7 @@
         {% endif %}
         {% if user %}
           <form method="post" action="/مكتبتي/{{ work.slug }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button class="btn ghost" type="submit">{% if fav %}إزالة من مكتبتي{% else %}أضف إلى مكتبتي{% endif %}</button>
           </form>
         {% endif %}

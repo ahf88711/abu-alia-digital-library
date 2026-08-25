@@ -85,6 +85,14 @@ def cmd_stats(_args: argparse.Namespace) -> None:
         print(catalog_stats(session))
 
 
+def cmd_validate_storage(args: argparse.Namespace) -> None:
+    from abu_alia.storage.audit import sample_storage
+
+    settings = get_settings()
+    result = sample_storage(settings.storage_root, limit=args.limit)
+    print(result)
+
+
 def cmd_collections(_args: argparse.Namespace) -> None:
     from abu_alia.catalog.collections import refresh_featured_collections
 
@@ -124,6 +132,9 @@ def main() -> None:
     p_s.set_defaults(func=cmd_stats)
     p_c = sub.add_parser("collections")
     p_c.set_defaults(func=cmd_collections)
+    p_v = sub.add_parser("validate-storage")
+    p_v.add_argument("--limit", type=int, default=40)
+    p_v.set_defaults(func=cmd_validate_storage)
     args = parser.parse_args()
     args.func(args)
 

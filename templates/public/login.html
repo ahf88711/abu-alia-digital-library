@@ -5,6 +5,7 @@
   <h1>{% if mode=='register' %}إنشاء حساب{% else %}دخول{% endif %}</h1>
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     {% if mode=='register' %}
       <p><label>الاسم<br><input type="text" name="الاسم" required></label></p>
     {% endif %}

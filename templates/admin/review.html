@@ -11,6 +11,7 @@
       <td>{{ i.kind }}</td><td>{{ i.reason }}</td>
       <td>
         <form method="post" action="/إدارة/مراجعة/{{ i.id }}/حل">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <button class="btn" type="submit">حل</button>
         </form>
       </td>

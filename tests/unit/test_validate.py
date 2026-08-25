@@ -20,6 +20,21 @@ def test_epub_ok(tmp_path, tmp_env):
     assert v.fmt == "epub"
 
 
+def test_sample_storage(tmp_path, tmp_env):
+    from abu_alia.storage.audit import sample_storage
+
+    root = tmp_path / "audit-storage"
+    root.mkdir()
+    p = root / "aa" / "bb"
+    p.mkdir(parents=True)
+    epub = p / "x.epub"
+    build_epub(epub, title="كتاب", author="مؤلف", identifier="x", chapters=[("ف", "<p>نص</p>")])
+    result = sample_storage(root, limit=10)
+    assert result["sampled"] == 1
+    assert result["valid"] == 1
+    assert result["sha256_collisions_in_sample"] == 0
+
+
 def test_reject_garbage(tmp_path, tmp_env):
     p = tmp_path / "x.bin"
     p.write_bytes(b"hello world this is not a book file!!")

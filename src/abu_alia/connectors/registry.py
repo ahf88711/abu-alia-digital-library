@@ -7,12 +7,14 @@ from abu_alia.connectors.fixture import FixtureConnector
 from abu_alia.connectors.gutenberg import GutenbergConnector
 from abu_alia.connectors.internet_archive import InternetArchiveConnector
 from abu_alia.connectors.openiti import OpenITIConnector
+from abu_alia.connectors.wikisource import WikisourceArConnector
 
 CONNECTORS: Dict[str, Type] = {
     "fixture": FixtureConnector,
     "openiti": OpenITIConnector,
     "gutenberg": GutenbergConnector,
     "internet_archive": InternetArchiveConnector,
+    "wikisource_ar": WikisourceArConnector,
 }
 
 

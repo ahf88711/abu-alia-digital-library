@@ -38,7 +38,7 @@
       <a href="/مكتبتي">مكتبتي</a>
       {% if user and user.is_admin %}<a href="/إدارة">الإدارة</a>{% endif %}
       {% if user %}
-        <form action="/خروج" method="post"><button class="btn ghost" type="submit">خروج</button></form>
+        <form action="/خروج" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn ghost" type="submit">خروج</button></form>
       {% else %}
         <a href="/دخول">دخول</a>
       {% endif %}

@@ -17,6 +17,7 @@ LICENSES = [
     ("cc0-1.0", "CC0", "https://creativecommons.org/publicdomain/zero/1.0/", True, True, False, False, False),
     ("cc-by-4.0", "CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/", True, True, True, False, False),
     ("cc-by-sa-4.0", "CC BY-SA 4.0", "https://creativecommons.org/licenses/by-sa/4.0/", True, True, True, True, False),
+    ("cc-by-sa-3.0", "CC BY-SA 3.0", "https://creativecommons.org/licenses/by-sa/3.0/", True, True, True, True, False),
     ("cc-by-nc-4.0", "CC BY-NC 4.0", "https://creativecommons.org/licenses/by-nc/4.0/", True, False, True, False, True),
     ("cc-by-nc-sa-4.0", "CC BY-NC-SA 4.0", "https://creativecommons.org/licenses/by-nc-sa/4.0/", True, False, True, True, True),
 ]
@@ -144,22 +145,22 @@ SOURCES = [
         homepage="https://ar.wikisource.org/",
         source_type="wiki",
         language="ar",
-        useful_size="آلاف الصفحات لا كلها كتب كاملة",
-        formats="text",
+        useful_size="صفحات مكتملة فقط (لا فهارس أو قوائم)",
+        formats="text→EPUB",
         has_pdf=False,
-        has_epub=False,
+        has_epub=True,
         has_api=True,
         has_direct_download=True,
         crawling_method="MediaWiki API",
-        pagination_method="API",
-        rate_limits="سياسات ويكيميديا",
-        robots_notes="CC BY-SA",
+        pagination_method="gcmcontinue",
+        rate_limits="طلب واحد في الثانية",
+        robots_notes="CC BY-SA 3.0 — استخدم API لا الكشط",
         license_information="CC BY-SA 3.0",
         redistribution_status="verified_open_license",
-        connector_status="planned",
+        connector_status="active",
         enabled=False,
         reliability="medium",
-        notes="يحتاج توليد EPUB من صفحات مكتملة.",
+        notes="موصل جاهز؛ يبقى متوقفاً أثناء حصاد OpenITI لتفادي قفل SQLite. لا يُستورد إلا الصفحات الطويلة المكتملة.",
     ),
     dict(
         code="fixture",
@@ -218,6 +219,11 @@ def _seed_sources(session: Session) -> None:
     for data in SOURCES:
         row = session.execute(select(Source).where(Source.code == data["code"])).scalar_one_or_none()
         if row:
+            if data["code"] == "wikisource_ar" and row.connector_status == "planned":
+                row.connector_status = data["connector_status"]
+                row.has_epub = data["has_epub"]
+                row.formats = data["formats"]
+                row.notes = data["notes"]
             continue
         if data["code"] == "fixture" and settings.is_production:
             data = dict(data)

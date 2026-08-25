@@ -1,23 +1,19 @@
 # PROJECT_STATUS
 
-- **current phase:** core system verified locally; GitHub next; production deploy blocked without hosting credentials
-- **completed phases:** 1–36 locally (architecture, domain, db, storage, jobs, connectors, rights, pipeline, Arabic, search, classification, design system, public UI, readers, admin, automated tests)
-- **architecture:** modular FastAPI monolith + DB-backed worker; SQLite default / Postgres-ready; local object storage / S3 interface
-- **important decisions:** OpenITI as primary legitimate Arabic corpus (CC BY-NC-SA 4.0, death year ≤ 1300 AH); IA user PD marks are not trusted; Gutenberg catalog CSV only (no HTML scrape)
-- **tests:** 29 passed (`pytest tests`)
-- **sources researched:** OpenITI, Gutenberg, Internet Archive, OAPEN, Safahat/Hindawi, Wikisource AR, QDL, KFNL, Shamela/Waqfeya (prohibited as rehost)
-- **sources integrated:** fixture, openiti, gutenberg, internet_archive
-- **source failures:** 3 OpenITI items failed file validation in the first batch of 5; OAPEN REST returned 500 during research
-- **books (verified local catalog, not fabricated):**
-  - unique published works: **4**
-  - PDF files: **2**
-  - EPUB files: **4**
-  - both formats: **2** (fixture titles)
-  - failed imports: **3**
-  - quarantined: **0**
-  - duplicates rejected: **0**
-- **titles published:** كليلة ودمنة؛ البخلاء؛ ديوان أبو طالب؛ معلقة عمرو بن كلثوم
-- **storage:** `data/storage/` (gitignored)
-- **Git:** initializing
-- **deployment:** `render.yaml` written; no Render/Fly/Railway token in this environment — public URL not claimed
-- **next:** push GitHub; scale OpenITI ingestion on a machine with disk; attach Postgres + persistent storage for production
+- **current phase:** harvesting
+- **updated:** 2026-08-25T21:39:00Z
+- **published unique works:** 1640
+- **PDF files:** 2
+- **EPUB files:** 1640
+- **failed imports:** 0
+- **quarantined:** 0
+- **discovered source items:** 1640
+- **queued/retrying jobs:** 0
+- **harvest target:** 4000 (target, not to be fabricated)
+- **note:** OpenITI harvest still running; file sample 40/40 valid; 0 sha256 collisions in sample
+- **architecture:** modular FastAPI monolith; OpenITI CC BY-NC-SA; IA untrusted PD marks quarantined
+- **GitHub:** https://github.com/ahf88711/abu-alia-digital-library
+- **deployment:** production public URL not claimed without hosting credentials
+- **blockers:** public hosting/S3 credentials (Render/Fly/Railway) — continue every other task
+- **engineering this checkpoint:** CSRF on POST; byte-range file serving; paginated sitemaps; HSTS/Permissions-Policy; Wikisource connector implemented but disabled during OpenITI harvest; EPUB reader font/theme/progress; 42 tests passing
+- **next:** continue OpenITI harvest toward 4000; do not invent books; enable Wikisource only if still short after OpenITI; do not start a second SQLite writer

@@ -4,6 +4,17 @@
 <div class="wrap">
   <h1 style="margin-top:1.2rem">{{ collection.title }}</h1>
   {% if collection.description %}<p>{{ collection.description }}</p>{% endif %}
+  {% if works %}
   <div class="grid">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  {% if pages and pages > 1 %}
+  <nav class="pager" aria-label="ترقيم الصفحات">
+    {% if page>1 %}<a href="?page={{ page-1 }}">السابق</a>{% endif %}
+    <span>{{ page }} / {{ pages }}</span>
+    {% if page<pages %}<a href="?page={{ page+1 }}">التالي</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  <div class="empty">لا توجد كتب في هذه المجموعة بعد.</div>
+  {% endif %}
 </div>
 {% endblock %}

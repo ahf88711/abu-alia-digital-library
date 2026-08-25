@@ -7,7 +7,7 @@
 | Internet Archive texts | mixed library | tens of thousands of files; high noise | PDF/EPUB | advancedsearch + metadata | PD/CC marks often **user-asserted** | `internet_archive` active, strict |
 | OAPEN | OA academic | unknown Arabic subset | PDF | REST (500s observed) | per-book CC | planned |
 | Safahat / Hindawi | publisher free-to-read | thousands | PDF/EPUB | none official | **uncertain** re-host | registered, disabled |
-| Arabic Wikisource | wiki | pages, not always complete books | text | MediaWiki | CC BY-SA 3.0 | planned |
+| Arabic Wikisource | wiki | complete long pages only | text → generated EPUB | MediaWiki API | CC BY-SA 3.0 | `wikisource_ar` implemented, **disabled** during OpenITI harvest |
 | Qatar Digital Library | heritage | manuscripts/archives | images/PDF | mixed | PD/CC labelled; ToS requires local determination | researched, not connected |
 | King Fahd National Library | national | unknown bulk export | mixed | none found | no redistribution grant found | researched only |
 | al-Maktaba al-Shamela / Waqfeya / pirate aggregators | mixed/pirate | large | PDF/text | scrape | **prohibited** | not connected |
