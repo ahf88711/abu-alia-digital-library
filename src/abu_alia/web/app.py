@@ -34,7 +34,7 @@ from abu_alia.db.models import (
     WorkContributor,
 )
 from abu_alia.db.session import init_db, session_scope
-from abu_alia.ingestion.pipeline import enqueue_discovery
+from abu_alia.ingestion.pipeline import catalog_stats, enqueue_discovery
 from abu_alia.jobs.queue import enqueue
 from abu_alia.search.backend import search_works
 from abu_alia.seed import seed_all
@@ -125,6 +125,17 @@ def _startup() -> None:
 @app.get("/api/health")
 def health():
     return {"ok": True, "version": __version__}
+
+
+@app.get("/api/stats")
+def public_stats(db: Session = Depends(get_db)):
+    stats = catalog_stats(db)
+    return {
+        "published": stats["published"],
+        "pdf": stats["pdf"],
+        "epub": stats["epub"],
+        "version": __version__,
+    }
 
 
 @app.get("/robots.txt")

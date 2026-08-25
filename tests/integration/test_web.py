@@ -9,6 +9,9 @@ def test_home(client):
 def test_health(client):
     r = client.get("/api/health")
     assert r.json()["ok"] is True
+    r2 = client.get("/api/stats")
+    assert r2.status_code == 200
+    assert "published" in r2.json()
 
 
 def test_static_pages(client):
