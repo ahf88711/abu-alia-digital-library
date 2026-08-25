@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional, Sequence
 
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, selectinload
-from sqlalchemy import select, func
 
 from abu_alia.db.models import Category, Cover, Edition, FileAsset, Work, WorkCategory, WorkContributor
 
@@ -50,3 +50,23 @@ def paginate(total: int, page: int, per: int):
     pages = max(1, (total + per - 1) // per)
     page = max(1, min(page, pages))
     return page, pages
+
+
+def count_ids(db: Session, id_stmt: Select) -> int:
+    inner = id_stmt.order_by(None).subquery()
+    return int(db.execute(select(func.count()).select_from(inner)).scalar() or 0)
+
+
+def load_works_ordered(db: Session, ids: Sequence[int]) -> List[Work]:
+    if not ids:
+        return []
+    rows = db.execute(work_query(db).where(Work.id.in_(list(ids)))).scalars().unique().all()
+    by_id = {w.id: w for w in rows}
+    return [by_id[i] for i in ids if i in by_id]
+
+
+def page_ids(db: Session, id_stmt: Select, page: int, per: int):
+    total = count_ids(db, id_stmt)
+    page, pages = paginate(total, page, per)
+    ids = list(db.execute(id_stmt.offset((page - 1) * per).limit(per)).scalars().all())
+    return ids, page, pages, total

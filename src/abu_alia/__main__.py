@@ -85,6 +85,16 @@ def cmd_stats(_args: argparse.Namespace) -> None:
         print(catalog_stats(session))
 
 
+def cmd_collections(_args: argparse.Namespace) -> None:
+    from abu_alia.catalog.collections import refresh_featured_collections
+
+    settings = get_settings()
+    init_db(settings)
+    with session_scope() as session:
+        n = refresh_featured_collections(session)
+        print(f"refreshed {n} collections")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="abu-alia")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -112,6 +122,8 @@ def main() -> None:
     p_h.set_defaults(func=cmd_harvest)
     p_s = sub.add_parser("stats")
     p_s.set_defaults(func=cmd_stats)
+    p_c = sub.add_parser("collections")
+    p_c.set_defaults(func=cmd_collections)
     args = parser.parse_args()
     args.func(args)
 

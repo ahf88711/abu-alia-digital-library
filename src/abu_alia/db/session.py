@@ -83,6 +83,11 @@ def init_db(settings: Optional[Settings] = None) -> None:
                     "identifiers, body, tokenize='unicode61')"
                 )
             )
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_files_format ON files(format)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_works_pub_published ON works(publication_status, published_at)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_works_downloads ON works(download_count)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_works_views ON works(view_count)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_source_items_status ON source_items(status)"))
 
 
 @contextmanager

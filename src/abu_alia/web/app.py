@@ -40,7 +40,16 @@ from abu_alia.search.backend import search_works
 from abu_alia.seed import seed_all
 from abu_alia.storage.backend import storage_from_settings
 from abu_alia.web.deps import get_current_user, get_db, require_admin, require_user
-from abu_alia.web.helpers import cover_of, formats_of, paginate, primary_author, primary_category, work_query
+from abu_alia.web.helpers import (
+    cover_of,
+    formats_of,
+    load_works_ordered,
+    page_ids,
+    paginate,
+    primary_author,
+    primary_category,
+    work_query,
+)
 from abu_alia.web.rate_limit import limit
 
 TEMPLATES_DIR = ROOT / "templates"
@@ -199,12 +208,22 @@ def books_index(
     ترتيب: str = Query("newest", alias="sort"),
     صيغة: Optional[str] = Query(None, alias="fmt"),
 ):
-    q = _list_books(db, ترتيب)
-    works = db.execute(q).scalars().unique().all()
+    id_stmt = select(Work.id).where(Work.publication_status == "published")
     if صيغة:
-        works = [w for w in works if صيغة in formats_of(w)]
-    page, pages = paginate(len(works), صفحة, 24)
-    slice_ = works[(page - 1) * 24 : page * 24]
+        id_stmt = (
+            id_stmt.join(Edition, Edition.work_id == Work.id)
+            .join(FileAsset, FileAsset.edition_id == Edition.id)
+            .where(FileAsset.format == صيغة, FileAsset.withdrawn.is_(False))
+            .distinct()
+        )
+    if ترتيب == "downloads":
+        id_stmt = id_stmt.order_by(Work.download_count.desc(), Work.id.desc())
+    elif ترتيب == "views":
+        id_stmt = id_stmt.order_by(Work.view_count.desc(), Work.id.desc())
+    else:
+        id_stmt = id_stmt.order_by(Work.published_at.desc(), Work.id.desc())
+    ids, page, pages, _total = page_ids(db, id_stmt, صفحة, 24)
+    slice_ = load_works_ordered(db, ids)
     return templates.TemplateResponse(
         "public/books.html",
         _ctx(
@@ -322,26 +341,24 @@ def category_page(path: str, request: Request, db: Session = Depends(get_db), ص
     if cat is None:
         raise HTTPException(404, "التصنيف غير موجود")
     children = db.execute(select(Category).where(Category.parent_id == cat.id).order_by(Category.sort_order)).scalars().all()
-    works = (
-        db.execute(
-            work_query(db)
-            .join(WorkCategory)
-            .join(Category, Category.id == WorkCategory.category_id)
-            .where(or_(Category.id == cat.id, Category.path.startswith(cat.path + "/")))
-            .order_by(Work.published_at.desc())
-        )
-        .scalars()
-        .unique()
-        .all()
+    id_stmt = (
+        select(Work.id)
+        .where(Work.publication_status == "published")
+        .join(WorkCategory, WorkCategory.work_id == Work.id)
+        .join(Category, Category.id == WorkCategory.category_id)
+        .where(or_(Category.id == cat.id, Category.path.startswith(cat.path + "/")))
+        .distinct()
+        .order_by(Work.published_at.desc(), Work.id.desc())
     )
-    page, pages = paginate(len(works), صفحة, 24)
+    ids, page, pages, _total = page_ids(db, id_stmt, صفحة, 24)
+    works = load_works_ordered(db, ids)
     return templates.TemplateResponse(
         "public/category.html",
         _ctx(
             request,
             category=cat,
             children=children,
-            works=works[(page - 1) * 24 : page * 24],
+            works=works,
             page=page,
             pages=pages,
             primary_author=primary_author,
@@ -361,11 +378,12 @@ def authors_index(request: Request, db: Session = Depends(get_db), صفحة: int
         n = f"%{normalize_search(ق)}%"
         stmt = stmt.where(Author.name_normalized.like(n))
     stmt = stmt.order_by(Author.canonical_name)
-    authors = db.execute(stmt).scalars().all()
-    page, pages = paginate(len(authors), صفحة, 36)
+    total = db.execute(select(func.count()).select_from(stmt.order_by(None).subquery())).scalar() or 0
+    page, pages = paginate(int(total), صفحة, 36)
+    authors = db.execute(stmt.offset((page - 1) * 36).limit(36)).scalars().all()
     return templates.TemplateResponse(
         "public/authors.html",
-        _ctx(request, authors=authors[(page - 1) * 36 : page * 36], page=page, pages=pages, q=ق),
+        _ctx(request, authors=authors, page=page, pages=pages, q=ق),
     )
 
 
