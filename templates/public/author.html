@@ -8,6 +8,11 @@
   <p class="muted">{{ works|length }} كتاباً</p>
   {% if works %}
   <div class="grid">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  <nav class="pager">
+    {% if page>1 %}<a href="?page={{ page-1 }}">السابق</a>{% endif %}
+    <span>{{ page }} / {{ pages }}</span>
+    {% if page<pages %}<a href="?page={{ page+1 }}">التالي</a>{% endif %}
+  </nav>
   {% else %}
   <div class="empty">لا كتب منشورة لهذا المؤلف بعد.</div>
   {% endif %}

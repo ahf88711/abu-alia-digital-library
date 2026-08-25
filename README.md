@@ -18,7 +18,15 @@ PYTHONPATH=src .venv/bin/python -m abu_alia ingest fixture --limit 10
 PYTHONPATH=src .venv/bin/python -m abu_alia serve --host 127.0.0.1 --port 8080
 ```
 
-In another terminal:
+Harvest legitimate OpenITI texts in a **separate** process (do not block the app):
+
+```bash
+PYTHONPATH=src .venv/bin/python -m abu_alia harvest --source openiti --batch 30 --target 4000
+PYTHONPATH=src .venv/bin/python -m abu_alia stats
+PYTHONPATH=src .venv/bin/python -m abu_alia collections
+```
+
+Worker (if using the job queue without harvest):
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m abu_alia worker

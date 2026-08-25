@@ -388,27 +388,32 @@ def authors_index(request: Request, db: Session = Depends(get_db), صفحة: int
 
 
 @app.get("/مؤلفون/{slug}", response_class=HTMLResponse)
-def author_page(slug: str, request: Request, db: Session = Depends(get_db)):
+def author_page(
+    slug: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    صفحة: int = Query(1, alias="page"),
+):
     author = db.execute(select(Author).where(Author.slug == slug)).scalar_one_or_none()
     if author is None:
         raise HTTPException(404, "المؤلف غير موجود")
-    works = (
-        db.execute(
-            work_query(db)
-            .join(WorkContributor)
-            .where(WorkContributor.author_id == author.id)
-            .order_by(Work.year.desc(), Work.id.desc())
-        )
-        .scalars()
-        .unique()
-        .all()
+    id_stmt = (
+        select(Work.id)
+        .where(Work.publication_status == "published")
+        .join(WorkContributor, WorkContributor.work_id == Work.id)
+        .where(WorkContributor.author_id == author.id)
+        .order_by(Work.year.desc(), Work.id.desc())
     )
+    ids, page, pages, _total = page_ids(db, id_stmt, صفحة, 48)
+    works = load_works_ordered(db, ids)
     return templates.TemplateResponse(
         "public/author.html",
         _ctx(
             request,
             author=author,
             works=works,
+            page=page,
+            pages=pages,
             primary_author=primary_author,
             primary_category=primary_category,
             formats_of=formats_of,
