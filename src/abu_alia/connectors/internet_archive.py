@@ -4,8 +4,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional
 from urllib.parse import quote
 
+import httpx
+
 from abu_alia.config import get_settings
 from abu_alia.connectors.base import DiscoveredItem, HttpMixin, RemoteFile, SourceMetadata
+from abu_alia.net.http import request_with_retry
 
 SEARCH = "https://archive.org/advancedsearch.php"
 META = "https://archive.org/metadata/{ident}"
@@ -30,18 +33,20 @@ class InternetArchiveConnector(HttpMixin):
         page = int(cursor or 1)
         rows = 50
         while True:
-            self.throttle()
-            resp = self._client.get(
-                SEARCH,
-                params={
-                    "q": query,
-                    "fl[]": ["identifier", "title", "creator", "licenseurl", "collection"],
-                    "rows": rows,
-                    "page": page,
-                    "output": "json",
-                    "sort[]": "downloads desc",
-                },
+            url = str(
+                httpx.URL(
+                    SEARCH,
+                    params={
+                        "q": query,
+                        "fl[]": ["identifier", "title", "creator", "licenseurl", "collection"],
+                        "rows": rows,
+                        "page": page,
+                        "output": "json",
+                        "sort[]": "downloads desc",
+                    },
+                )
             )
+            resp = self.http_get(url)
             resp.raise_for_status()
             data = resp.json()
             docs = data.get("response", {}).get("docs") or []
@@ -64,8 +69,7 @@ class InternetArchiveConnector(HttpMixin):
                 break
 
     def fetch_metadata(self, item: DiscoveredItem) -> SourceMetadata:
-        self.throttle()
-        resp = self._client.get(META.format(ident=item.external_id))
+        resp = self.http_get(META.format(ident=item.external_id))
         resp.raise_for_status()
         payload = resp.json()
         md = payload.get("metadata") or {}
@@ -119,13 +123,10 @@ class InternetArchiveConnector(HttpMixin):
     def download(self, remote: RemoteFile, dest: Path) -> Path:
         if not remote.url:
             raise RuntimeError("missing ia url")
-        self.throttle()
         dest.parent.mkdir(parents=True, exist_ok=True)
-        with self._client.stream("GET", remote.url) as resp:
-            resp.raise_for_status()
-            with dest.open("wb") as fh:
-                for chunk in resp.iter_bytes(1024 * 64):
-                    fh.write(chunk)
+        resp = self.http_get(remote.url)
+        resp.raise_for_status()
+        dest.write_bytes(resp.content)
         return dest
 
 

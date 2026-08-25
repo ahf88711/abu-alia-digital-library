@@ -75,6 +75,16 @@ async def attach_user(request: Request, call_next):
         db.close()
     except Exception:
         request.state.user = None
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        settings = get_settings()
+        if settings.is_production:
+            origin = request.headers.get("origin")
+            host = request.headers.get("host")
+            if origin and host:
+                from urllib.parse import urlparse
+
+                if urlparse(origin).netloc != host:
+                    return Response("رفض الطلب", status_code=403)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
