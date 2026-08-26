@@ -1,13 +1,23 @@
 {% extends "base.html" %}
 {% block title %}دليل التصنيفات — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap">
-  <h1 style="margin-top:1.2rem">دليل التصنيفات</h1>
-  <p class="muted">تصفّح المعرفة بالعربية وفق شجرة تصنيف قابلة للتعميق.</p>
+<div class="wrap page-block">
+  <header class="page-head">
+    <p class="kicker">الدليل</p>
+    <h1>التصنيفات</h1>
+    <p class="lede muted">تصفّح المعرفة بالعربية وفق موضوع الكتاب لا وفق كلمة عابرة في العنوان.</p>
+  </header>
+  {% if not roots %}
+    <div class="empty">لا تصنيفات منشورة حالياً.</div>
+  {% endif %}
   {% for root in roots %}
-    <section class="section">
-      <h2><a href="/تصنيفات/{{ root.path }}">{{ root.name_ar }}</a></h2>
-      {% if root.description %}<p class="muted">{{ root.description }}</p>{% endif %}
+    <section class="cat-group">
+      <div class="section-head">
+        <h2><a href="/تصنيفات/{{ root.path }}">{{ root.name_ar }}</a></h2>
+        <small class="muted">{{ counts.get(root.id, 0) }} كتاباً</small>
+      </div>
+      {% if root.description %}<p class="muted cat-desc">{{ root.description }}</p>{% endif %}
+      {% if by_parent.get(root.id) %}
       <div class="cats">
         {% for child in by_parent.get(root.id, []) %}
           <a class="cat-chip" href="/تصنيفات/{{ child.path }}">
@@ -16,6 +26,7 @@
           </a>
         {% endfor %}
       </div>
+      {% endif %}
     </section>
   {% endfor %}
 </div>

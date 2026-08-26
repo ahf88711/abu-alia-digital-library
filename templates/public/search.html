@@ -1,26 +1,32 @@
 {% extends "base.html" %}
 {% block title %}بحث — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap">
-  <h1 style="margin-top:1.2rem">البحث</h1>
-  <form class="search-hero" action="/بحث" method="get" style="margin:1rem 0">
-    <input type="search" name="q" value="{{ q }}" placeholder="عنوان، مؤلف، موضوع…" aria-label="عبارة البحث">
+<div class="wrap page-block">
+  <header class="page-head">
+    <h1>البحث</h1>
+  </header>
+  <form class="search-hero" action="/بحث" method="get" role="search">
+    <label class="sr-only" for="q-search">عبارة البحث</label>
+    <input id="q-search" type="search" name="q" value="{{ q }}" placeholder="عنوان، مؤلف، موضوع…">
     <button class="btn" type="submit">ابحث</button>
   </form>
   <form class="filters" method="get">
     <input type="hidden" name="q" value="{{ q }}">
-    <select name="cat" aria-label="التصنيف">
+    <label class="sr-only" for="cat">التصنيف</label>
+    <select id="cat" name="cat">
       <option value="">كل التصنيفات</option>
       {% for c in categories %}
         <option value="{{ c.path }}" {% if cat==c.path %}selected{% endif %}>{{ c.name_ar }}</option>
       {% endfor %}
     </select>
-    <select name="fmt" aria-label="الصيغة">
+    <label class="sr-only" for="fmt">الصيغة</label>
+    <select id="fmt" name="fmt">
       <option value="">كل الصيغ</option>
       <option value="pdf" {% if fmt=='pdf' %}selected{% endif %}>PDF</option>
       <option value="epub" {% if fmt=='epub' %}selected{% endif %}>EPUB</option>
     </select>
-    <select name="sort" aria-label="الترتيب">
+    <label class="sr-only" for="sort">الترتيب</label>
+    <select id="sort" name="sort">
       <option value="relevance" {% if sort=='relevance' %}selected{% endif %}>الصلة</option>
       <option value="newest" {% if sort=='newest' %}selected{% endif %}>الأحدث</option>
       <option value="downloads" {% if sort=='downloads' %}selected{% endif %}>الأكثر تحميلاً</option>
@@ -32,9 +38,9 @@
   {% if q and result.total == 0 %}
     <div class="empty">لا نتائج لـ «{{ q }}». جرّب إزالة التشكيل أو جزءاً من العنوان.</div>
   {% elif result['items'] %}
-    <p class="muted">{{ result.total }} نتيجة</p>
+    <p class="muted result-count">{{ result.total }} نتيجة</p>
     <div class="grid">{% for work in result['items'] %}{% include "partials/book_card.html" %}{% endfor %}</div>
-    <nav class="pager">
+    <nav class="pager" aria-label="ترقيم الصفحات">
       {% if page>1 %}<a href="?q={{ q }}&page={{ page-1 }}">السابق</a>{% endif %}
       <span>{{ page }} / {{ pages }}</span>
       {% if page<pages %}<a href="?q={{ q }}&page={{ page+1 }}">التالي</a>{% endif %}

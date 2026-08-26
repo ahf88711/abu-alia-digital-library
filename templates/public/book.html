@@ -7,7 +7,7 @@
 </script>
 {% endblock %}
 {% block content %}
-<div class="wrap">
+<div class="wrap page-block">
   <nav class="crumbs">
     <a href="/">الرئيسية</a> /
     {% set cat = primary_category(work) %}
@@ -17,24 +17,32 @@
   <article class="detail">
     <div class="detail-cover">
       {% set c = cover_of(work) %}
-      {% if c %}<img src="/أغلفة/{{ work.id }}" alt="غلاف {{ work.title }}">{% endif %}
+      {% if c %}
+        <img src="/أغلفة/{{ work.id }}" alt="غلاف {{ work.title }}">
+      {% else %}
+        <div class="cover-fallback cover-fallback-lg" aria-hidden="true">
+          <span class="cover-kicker">كتاب</span>
+          <span class="cover-title">{{ work.title }}</span>
+          <span class="cover-author">{{ primary_author(work) }}</span>
+        </div>
+      {% endif %}
     </div>
-    <div>
+    <div class="detail-body">
       <h1>{{ work.title }}</h1>
       {% if work.subtitle %}<p class="muted">{{ work.subtitle }}</p>{% endif %}
-      <p>
+      <p class="byline">
         {% for contrib in work.contributors %}
           <a href="/مؤلفون/{{ contrib.author.slug }}">{{ contrib.author.canonical_name }}</a>{% if not loop.last %}، {% endif %}
         {% endfor %}
       </p>
-      {% if work.description %}<p>{{ work.description|plain }}</p>{% endif %}
+      {% if work.description %}<p class="measure">{{ work.description|plain }}</p>{% endif %}
       <div class="actions">
         {% if 'pdf' in formats_of(work) %}
           <a class="btn" href="/قراءة/{{ work.slug }}/pdf">اقرأ PDF</a>
           <a class="btn ghost" href="/ملفات/{{ work.slug }}/pdf?dl=1">تنزيل PDF</a>
         {% endif %}
         {% if 'epub' in formats_of(work) %}
-          <a class="btn gold" href="/قراءة/{{ work.slug }}/epub">اقرأ EPUB</a>
+          <a class="btn" href="/قراءة/{{ work.slug }}/epub">اقرأ EPUB</a>
           <a class="btn ghost" href="/ملفات/{{ work.slug }}/epub?dl=1">تنزيل EPUB</a>
         {% endif %}
         {% if user %}
@@ -44,21 +52,21 @@
           </form>
         {% endif %}
       </div>
-      <div class="meta-list">
-        {% if cat %}<div>التصنيف: <a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a></div>{% endif %}
+      <dl class="meta-list">
+        {% if cat %}<div><dt>التصنيف</dt><dd><a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a></dd></div>{% endif %}
         {% for ed in work.editions %}
-          {% if ed.publisher %}<div>الناشر: {{ ed.publisher.name }}</div>{% endif %}
-          {% if ed.year %}<div>السنة: {{ ed.year }}</div>{% endif %}
-          {% if ed.isbn13 %}<div>ردمك: {{ ed.isbn13 }}</div>{% endif %}
-          {% if ed.page_count %}<div>الصفحات: {{ ed.page_count }}</div>{% endif %}
-          {% if ed.license %}<div>الترخيص: {{ ed.license.name_ar }}</div>{% endif %}
-          {% if ed.attribution %}<div>{{ ed.attribution }}</div>{% endif %}
+          {% if ed.publisher %}<div><dt>الناشر</dt><dd>{{ ed.publisher.name }}</dd></div>{% endif %}
+          {% if ed.year %}<div><dt>السنة</dt><dd>{{ ed.year }}</dd></div>{% endif %}
+          {% if ed.isbn13 %}<div><dt>ردمك</dt><dd>{{ ed.isbn13 }}</dd></div>{% endif %}
+          {% if ed.page_count %}<div><dt>الصفحات</dt><dd>{{ ed.page_count }}</dd></div>{% endif %}
+          {% if ed.license %}<div><dt>الترخيص</dt><dd>{{ ed.license.name_ar }}</dd></div>{% endif %}
+          {% if ed.attribution %}<div><dt>النسبة</dt><dd>{{ ed.attribution }}</dd></div>{% endif %}
           {% for f in ed.files if not f.withdrawn %}
-            <div>{{ f.format|upper }} — {{ '%.1f'|format(f.size_bytes/1024/1024) }} م.ب</div>
+            <div><dt>{{ f.format|upper }}</dt><dd>{{ '%.1f'|format(f.size_bytes/1024/1024) }} م.ب</dd></div>
           {% endfor %}
         {% endfor %}
-        <div>المشاهدات: {{ work.view_count }} · التنزيلات: {{ work.download_count }}</div>
-      </div>
+        <div><dt>المشاهدات</dt><dd>{{ work.view_count }} · التنزيلات {{ work.download_count }}</dd></div>
+      </dl>
     </div>
   </article>
   {% if same_author %}

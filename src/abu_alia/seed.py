@@ -251,6 +251,15 @@ def _seed_taxonomy(session: Session) -> None:
                 )
                 session.add(existing)
                 session.flush()
+            else:
+                existing.triggers = node.get("triggers") or [node["name"]]
+                existing.path = path
+                existing.name_ar = node["name"]
+                existing.name_normalized = normalize_search(node["name"])
+                if node.get("description"):
+                    existing.description = node["description"]
+                if parent is not None and existing.parent_id is None:
+                    existing.parent_id = parent.id
             walk(node.get("children") or [], existing, path)
 
     walk(TAXONOMY, None, "")

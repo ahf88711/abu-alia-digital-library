@@ -101,6 +101,29 @@ def cmd_validate_storage(args: argparse.Namespace) -> None:
     print(result)
 
 
+def cmd_reclassify(args: argparse.Namespace) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from abu_alia.classification.integrity import category_counts, empty_category_slugs, find_misplaced
+    from abu_alia.classification.quality import audit_catalog
+    from abu_alia.classification.reclassify import ensure_classification
+
+    settings = get_settings()
+    init_db(settings)
+    with session_scope() as session:
+        stats = ensure_classification(session, force=args.force)
+        print("reclassify", stats)
+        counts = category_counts(session)
+        nonempty = {k: v for k, v in sorted(counts.items(), key=lambda kv: -kv[1]) if v}
+        print("nonempty", nonempty)
+        print("empty", empty_category_slugs(session))
+        bad = find_misplaced(session, limit=30)
+        print("misplaced", len(bad))
+        for row in bad[:15]:
+            print(" ", row)
+        quality = audit_catalog(session, settings.storage_root)
+        print("quality", {k: quality[k] for k in quality if k != "duplicate_examples" and k != "missing_storage_examples"})
+
+
 def cmd_collections(_args: argparse.Namespace) -> None:
     from abu_alia.catalog.collections import refresh_featured_collections
 
@@ -146,6 +169,9 @@ def main() -> None:
     p_rest = sub.add_parser("restore-catalog")
     p_rest.add_argument("--force", action="store_true")
     p_rest.set_defaults(func=cmd_restore_catalog)
+    p_re = sub.add_parser("reclassify")
+    p_re.add_argument("--force", action="store_true")
+    p_re.set_defaults(func=cmd_reclassify)
     args = parser.parse_args()
     args.func(args)
 

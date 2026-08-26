@@ -5,6 +5,7 @@ from typing import List, Optional, Sequence
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, selectinload
 
+from abu_alia.classification.integrity import nonempty_categories, rolled_counts
 from abu_alia.db.models import Category, Cover, Edition, FileAsset, Work, WorkCategory, WorkContributor
 
 
@@ -70,3 +71,16 @@ def page_ids(db: Session, id_stmt: Select, page: int, per: int):
     page, pages = paginate(total, page, per)
     ids = list(db.execute(id_stmt.offset((page - 1) * per).limit(per)).scalars().all())
     return ids, page, pages, total
+
+
+def public_category_index(db: Session):
+    """Roots/children/counts for public navigation. Empty branches are omitted."""
+    counts = rolled_counts(db)
+    visible = nonempty_categories(db)
+    visible_ids = {c.id for c in visible}
+    roots = [c for c in visible if c.parent_id is None]
+    by_parent = {}
+    for c in visible:
+        if c.parent_id is not None and c.parent_id in visible_ids:
+            by_parent.setdefault(c.parent_id, []).append(c)
+    return roots, by_parent, counts

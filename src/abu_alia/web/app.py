@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import List, Optional, Sequence
 
@@ -49,8 +50,11 @@ from abu_alia.web.helpers import (
     paginate,
     primary_author,
     primary_category,
+    public_category_index,
     work_query,
 )
+from abu_alia.web.visits import increment as increment_visits
+from abu_alia.web.visits import is_page_view, read_count
 from abu_alia.storage.serve import file_response_with_range
 from abu_alia.web.rate_limit import limit
 from abu_alia.web.sanitize import plain_text
@@ -71,6 +75,7 @@ def _ctx(request: Request, **kwargs):
         "app_name": "مكتبة أبو علياء الرقمية",
         "nav": request.url.path,
         "csrf_token": token_for_request(request),
+        "visitor_count": read_count(),
     }
     data.update(kwargs)
     return data
@@ -120,6 +125,11 @@ async def attach_user(request: Request, call_next):
     )
     if get_settings().is_production:
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    try:
+        if is_page_view(request, response):
+            increment_visits()
+    except Exception:
+        pass
     return response
 
 
@@ -138,6 +148,12 @@ def _startup() -> None:
     init_db(settings)
     with session_scope() as session:
         seed_all(session)
+        try:
+            from abu_alia.classification.reclassify import ensure_classification
+
+            ensure_classification(session)
+        except Exception:
+            logging.getLogger("abu_alia.web").exception("classification refresh skipped")
 
 
 @app.get("/api/health")
@@ -232,7 +248,7 @@ def home(request: Request, db: Session = Depends(get_db)):
     popular = db.execute(work_query(db).order_by(Work.download_count.desc(), Work.view_count.desc()).limit(8)).scalars().unique().all()
     viewed = db.execute(work_query(db).order_by(Work.view_count.desc()).limit(8)).scalars().unique().all()
     featured = db.execute(work_query(db).where(Work.featured.is_(True)).limit(8)).scalars().unique().all()
-    cats = db.execute(select(Category).where(Category.parent_id.is_(None)).order_by(Category.sort_order)).scalars().all()
+    cats, _by_parent, cat_counts = public_category_index(db)
     authors = db.execute(select(Author).order_by(Author.id.desc()).limit(8)).scalars().all()
     book_count = db.execute(select(func.count()).select_from(Work).where(Work.publication_status == "published")).scalar() or 0
     author_count = db.execute(select(func.count()).select_from(Author)).scalar() or 0
@@ -245,6 +261,7 @@ def home(request: Request, db: Session = Depends(get_db)):
             viewed=viewed,
             featured=featured or latest[:4],
             categories=cats,
+            category_counts=cat_counts,
             authors=authors,
             book_count=book_count,
             author_count=author_count,
@@ -383,19 +400,7 @@ def book_detail(slug: str, request: Request, db: Session = Depends(get_db)):
 
 @app.get("/تصنيفات", response_class=HTMLResponse)
 def categories_index(request: Request, db: Session = Depends(get_db)):
-    roots = db.execute(select(Category).where(Category.parent_id.is_(None)).order_by(Category.sort_order)).scalars().all()
-    children = db.execute(select(Category).where(Category.parent_id.is_not(None))).scalars().all()
-    by_parent = {}
-    for c in children:
-        by_parent.setdefault(c.parent_id, []).append(c)
-    counts = dict(
-        db.execute(
-            select(WorkCategory.category_id, func.count())
-            .join(Work, Work.id == WorkCategory.work_id)
-            .where(Work.publication_status == "published")
-            .group_by(WorkCategory.category_id)
-        ).all()
-    )
+    roots, by_parent, counts = public_category_index(db)
     return templates.TemplateResponse(
         "public/categories.html",
         _ctx(request, roots=roots, by_parent=by_parent, counts=counts),
@@ -407,7 +412,8 @@ def category_page(path: str, request: Request, db: Session = Depends(get_db), ص
     cat = db.execute(select(Category).where(or_(Category.slug == path, Category.path == path))).scalar_one_or_none()
     if cat is None:
         raise HTTPException(404, "التصنيف غير موجود")
-    children = db.execute(select(Category).where(Category.parent_id == cat.id).order_by(Category.sort_order)).scalars().all()
+    _roots, by_parent, counts = public_category_index(db)
+    children = by_parent.get(cat.id, [])
     id_stmt = (
         select(Work.id)
         .where(Work.publication_status == "published")
@@ -425,6 +431,7 @@ def category_page(path: str, request: Request, db: Session = Depends(get_db), ص
             request,
             category=cat,
             children=children,
+            counts=counts,
             works=works,
             page=page,
             pages=pages,
@@ -514,7 +521,7 @@ def search_page(
             sort=ترتيب,
         )
     pages = max(1, (result["total"] + 23) // 24)
-    cats = db.execute(select(Category).where(Category.parent_id.is_(None)).order_by(Category.sort_order)).scalars().all()
+    cats, _bp, _cc = public_category_index(db)
     return templates.TemplateResponse(
         "public/search.html",
         _ctx(
@@ -537,7 +544,7 @@ def search_page(
 
 @app.get("/بحث-متقدم", response_class=HTMLResponse)
 def advanced_search(request: Request, db: Session = Depends(get_db)):
-    cats = db.execute(select(Category).order_by(Category.path)).scalars().all()
+    cats, _bp, _cc = public_category_index(db)
     return templates.TemplateResponse("public/advanced_search.html", _ctx(request, categories=cats))
 
 

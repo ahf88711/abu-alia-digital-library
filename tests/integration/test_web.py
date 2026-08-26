@@ -12,8 +12,17 @@ def test_home(client):
     assert "مكتبة أبو علياء" in r.text
     assert 'dir="rtl"' in r.text
     assert "التصنيفات" in r.text
+    assert "الزيارات:" in r.text
+    assert "family=Amiri" in r.text or "Amiri" in r.text
     assert r.headers.get("x-content-type-options") == "nosniff"
     assert "Permissions-Policy" in r.headers or r.headers.get("permissions-policy")
+
+
+def test_empty_categories_hidden(client):
+    r = client.get("/تصنيفات")
+    assert r.status_code == 200
+    assert "الفيزياء" not in r.text
+    assert "الكيمياء" not in r.text
 
 
 def test_health(client):

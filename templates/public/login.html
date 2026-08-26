@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{% if mode=='register' %}إنشاء حساب{% else %}دخول{% endif %} — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap" style="padding:1.2rem 0 2rem;max-width:28rem">
+<div class="wrap page-block" style="max-width:28rem">
   <h1>{% if mode=='register' %}إنشاء حساب{% else %}دخول{% endif %}</h1>
   {% if error %}<div class="error">{{ error }}</div>{% endif %}
   <form method="post">

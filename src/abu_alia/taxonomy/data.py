@@ -51,7 +51,7 @@ TAXONOMY = [
             {"slug": "islamic-history", "name": "التاريخ الإسلامي", "triggers": ["تاريخ الاسلام", "خلفاء"]},
             {"slug": "arab-history", "name": "التاريخ العربي", "triggers": ["تاريخ العرب"]},
             {"slug": "ancient-history", "name": "التاريخ القديم", "triggers": ["قديم", "آشور", "فرعون"]},
-            {"slug": "modern-history", "name": "التاريخ الحديث", "triggers": ["حديث", "استعمار", "نهضة"]},
+            {"slug": "modern-history", "name": "التاريخ الحديث", "triggers": ["التاريخ الحديث", "استعمار", "نهضة"]},
             {"slug": "states", "name": "تاريخ الدول", "triggers": ["دولة", "سلطنة", "مملكة"]},
             {"slug": "civilizations", "name": "الحضارات", "triggers": ["حضارة"]},
         ],
@@ -62,7 +62,7 @@ TAXONOMY = [
     {
         "slug": "sciences",
         "name": "العلوم",
-        "triggers": ["علم", "علوم"],
+        "triggers": ["علوم طبيعية", "علوم تجريبية"],
         "children": [
             {"slug": "physics", "name": "الفيزياء", "triggers": ["فيزياء"]},
             {"slug": "chemistry", "name": "الكيمياء", "triggers": ["كيمياء"]},
@@ -71,8 +71,8 @@ TAXONOMY = [
             {"slug": "earth", "name": "علوم الأرض", "triggers": ["جيولوجيا", "ارض"]},
         ],
     },
-    {"slug": "math", "name": "الرياضيات", "triggers": ["رياض", "حساب", "جبر", "هندسة رياضية"]},
-    {"slug": "medicine", "name": "الطب والصحة", "triggers": ["طب", "صحة", "قانون في الطب", "جالينوس", "ابقراط", "أبقراط", "تشريح", "نبض"]},
+    {"slug": "math", "name": "الرياضيات", "triggers": ["رياضيات", "حساب", "جبر", "هندسة رياضية"]},
+    {"slug": "medicine", "name": "الطب والصحة", "triggers": ["في الطب", "صحة", "قانون في الطب", "جالينوس", "ابقراط", "أبقراط", "تشريح", "نبض"]},
     {"slug": "engineering", "name": "الهندسة", "triggers": ["هندسة"]},
     {"slug": "tech", "name": "التقنية والحاسب", "triggers": ["حاسوب", "برمجة", "تقنية", "ذكاء"]},
     {"slug": "philosophy", "name": "الفلسفة", "triggers": ["فلسفة", "منطق", "حكمة", "ارسطو", "أرسطو"]},
@@ -86,4 +86,10 @@ TAXONOMY = [
     {"slug": "education", "name": "التربية والتعليم", "triggers": ["تربية", "تعليم", "بيداغوجيا"]},
     {"slug": "children", "name": "الأطفال", "triggers": ["اطفال", "ناشئة", "فتيان"]},
     {"slug": "general", "name": "الثقافة العامة", "triggers": ["ثقافة", "معارف", "موسوعة"]},
+    {
+        "slug": "unclassified",
+        "name": "غير مصنف",
+        "description": "كتب لم يتوفر لها دليل موضوعي كافٍ.",
+        "triggers": [],
+    },
 ]

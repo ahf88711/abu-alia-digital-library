@@ -18,6 +18,8 @@ data/tmp/
 data/imports/
 data/logs/
 data/cache/
+data/backups/
+data/visitor_count.json
 data/harvest_checkpoint.json
 *.log
 dist/

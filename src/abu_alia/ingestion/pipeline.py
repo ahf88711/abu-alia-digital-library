@@ -314,6 +314,19 @@ def run_ingest_item(session: Session, source_item_id: int) -> str:
                     evidence={"signals": row["evidence"]},
                 )
             )
+        if not chosen:
+            from abu_alia.classification.reclassify import ensure_unclassified
+
+            unclassified = ensure_unclassified(session)
+            session.add(
+                WorkCategory(
+                    work_id=work.id,
+                    category_id=unclassified.id,
+                    confidence=0.0,
+                    is_primary=True,
+                    evidence={"signals": ["unclassified"]},
+                )
+            )
         if needs_review:
             session.add(
                 ReviewItem(

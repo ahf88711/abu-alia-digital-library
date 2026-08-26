@@ -14,6 +14,7 @@ from abu_alia.seed import seed_all
 @pytest.fixture()
 def tmp_env(tmp_path, monkeypatch):
     db = tmp_path / "library.db"
+    monkeypatch.setenv("ABU_ALIA_DATA_ROOT", str(tmp_path))
     monkeypatch.setenv("ABU_ALIA_DATABASE_URL", f"sqlite:///{db}")
     monkeypatch.setenv("ABU_ALIA_STORAGE_ROOT", str(tmp_path / "storage"))
     monkeypatch.setenv("ABU_ALIA_TMP_ROOT", str(tmp_path / "tmp"))
