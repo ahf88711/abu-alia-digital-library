@@ -128,7 +128,13 @@ def _startup() -> None:
     settings = get_settings()
     settings.storage_root.mkdir(parents=True, exist_ok=True)
     settings.tmp_root.mkdir(parents=True, exist_ok=True)
-    (ROOT / "data").mkdir(exist_ok=True)
+    settings.data_root.mkdir(parents=True, exist_ok=True)
+    if settings.restore_on_boot:
+        from abu_alia.deploy.restore import restore_catalog
+        from abu_alia.db.session import reset_engine
+
+        restore_catalog()
+        reset_engine()
     init_db(settings)
     with session_scope() as session:
         seed_all(session)

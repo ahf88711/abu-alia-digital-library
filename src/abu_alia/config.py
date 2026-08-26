@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def detect_data_root() -> Path:
+    env = os.environ.get("ABU_ALIA_DATA_ROOT")
+    if env:
+        return Path(env)
+    render_disk = Path("/var/data")
+    if render_disk.is_dir() and os.access(render_disk, os.W_OK):
+        return render_disk
+    return ROOT / "data"
 
 
 class Settings(BaseSettings):
@@ -19,11 +30,20 @@ class Settings(BaseSettings):
 
     env: str = "development"
     secret_key: str = "dev-only-change-in-production"
-    database_url: str = f"sqlite:///{ROOT / 'data' / 'library.db'}"
-    storage_root: Path = ROOT / "data" / "storage"
-    tmp_root: Path = ROOT / "data" / "tmp"
-    cache_root: Path = ROOT / "data" / "cache"
+    data_root: Path = detect_data_root()
+    database_url: str = ""
+    storage_root: Path = Path()
+    tmp_root: Path = Path()
+    cache_root: Path = Path()
     public_base_url: str = "http://127.0.0.1:8080"
+    catalog_snapshot_db: Optional[str] = (
+        "https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/library.db.gz"
+    )
+    catalog_snapshot_storage: Optional[str] = (
+        "https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/storage.tar"
+    )
+    restore_on_boot: bool = False
+    restore_storage: bool = True
     admin_email: str = "admin@localhost"
     admin_password: str = "change-me-now"
     session_days: int = 14
@@ -61,6 +81,24 @@ class Settings(BaseSettings):
     s3_secret_key: Optional[str] = None
     s3_region: str = "auto"
     font_dir: Path = ROOT / "static" / "fonts"
+
+    @model_validator(mode="after")
+    def _fill_paths(self) -> "Settings":
+        root = Path(self.data_root)
+        root.mkdir(parents=True, exist_ok=True)
+        if not self.database_url:
+            db = (root / "library.db").resolve()
+            self.database_url = "sqlite:///" + str(db)
+        if not str(self.storage_root) or str(self.storage_root) == ".":
+            self.storage_root = root / "storage"
+        if not str(self.tmp_root) or str(self.tmp_root) == ".":
+            self.tmp_root = root / "tmp"
+        if not str(self.cache_root) or str(self.cache_root) == ".":
+            self.cache_root = root / "cache"
+        self.storage_root.mkdir(parents=True, exist_ok=True)
+        self.tmp_root.mkdir(parents=True, exist_ok=True)
+        self.cache_root.mkdir(parents=True, exist_ok=True)
+        return self
 
     @property
     def is_sqlite(self) -> bool:

@@ -57,4 +57,6 @@ See `docs/sources/` and the in-app source registry.
 
 ## Production
 
-`render.yaml` describes a web process and a worker. Attach PostgreSQL and a persistent disk (or S3-compatible storage) before large-scale ingestion. Never commit book binaries or secrets.
+`render.yaml` starts the web process with `restore-catalog`, which copies the existing harvested SQLite catalog and book files from the GitHub Release snapshot when the production data directory is empty. It does not re-harvest. Never commit book binaries or secrets.
+
+Public site: https://abu-alia-digital-library.onrender.com

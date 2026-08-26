@@ -4,21 +4,43 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: PYTHONPATH=src python -m abu_alia serve --host 0.0.0.0 --port $PORT
+    startCommand: PYTHONPATH=src python -m abu_alia restore-catalog && PYTHONPATH=src python -m abu_alia serve --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
       - key: ABU_ALIA_ENV
         value: production
       - key: PYTHONPATH
         value: src
+      - key: ABU_ALIA_RESTORE_ON_BOOT
+        value: "true"
+      - key: ABU_ALIA_PUBLIC_BASE_URL
+        value: https://abu-alia-digital-library.onrender.com
+      - key: ABU_ALIA_CATALOG_SNAPSHOT_DB
+        value: https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/library.db.gz
+      - key: ABU_ALIA_CATALOG_SNAPSHOT_STORAGE
+        value: https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/storage.tar
+      - key: ABU_ALIA_SECRET_KEY
+        generateValue: true
+      - key: ABU_ALIA_RESTORE_STORAGE
+        value: "true"
   - type: worker
     name: abu-alia-worker
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: PYTHONPATH=src python -m abu_alia worker
+    startCommand: PYTHONPATH=src python -m abu_alia restore-catalog && PYTHONPATH=src python -m abu_alia worker
     envVars:
       - key: ABU_ALIA_ENV
         value: production
       - key: PYTHONPATH
         value: src
+      - key: ABU_ALIA_RESTORE_ON_BOOT
+        value: "true"
+      - key: ABU_ALIA_CATALOG_SNAPSHOT_DB
+        value: https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/library.db.gz
+      - key: ABU_ALIA_CATALOG_SNAPSHOT_STORAGE
+        value: https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/storage.tar
+      - key: ABU_ALIA_SECRET_KEY
+        generateValue: true
+      - key: ABU_ALIA_RESTORE_STORAGE
+        value: "false"

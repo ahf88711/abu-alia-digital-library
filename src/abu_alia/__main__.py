@@ -85,6 +85,14 @@ def cmd_stats(_args: argparse.Namespace) -> None:
         print(catalog_stats(session))
 
 
+def cmd_restore_catalog(args: argparse.Namespace) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from abu_alia.deploy.restore import restore_catalog
+
+    result = restore_catalog(force=args.force)
+    print(result)
+
+
 def cmd_validate_storage(args: argparse.Namespace) -> None:
     from abu_alia.storage.audit import sample_storage
 
@@ -135,6 +143,9 @@ def main() -> None:
     p_v = sub.add_parser("validate-storage")
     p_v.add_argument("--limit", type=int, default=40)
     p_v.set_defaults(func=cmd_validate_storage)
+    p_rest = sub.add_parser("restore-catalog")
+    p_rest.add_argument("--force", action="store_true")
+    p_rest.set_defaults(func=cmd_restore_catalog)
     args = parser.parse_args()
     args.func(args)
 
