@@ -1,16 +1,19 @@
 {% extends "base.html" %}
 {% block title %}المجموعات — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap">
-  <h1 style="margin-top:1.2rem">المجموعات</h1>
+<div class="wrap page">
+  <header class="page-head"><h1>المجموعات</h1></header>
   {% if collections %}
-    <div class="cats">
+    <ul class="cat-list">
       {% for c in collections %}
-        <a class="cat-chip" href="/مجموعات/{{ c.slug }}"><strong>{{ c.title }}</strong><small>{{ c.description or '' }}</small></a>
+        <li>
+          <a href="/مجموعات/{{ c.slug }}">{{ c.title }}</a>
+          {% if c.description %}<small>{{ c.description }}</small>{% endif %}
+        </li>
       {% endfor %}
-    </div>
+    </ul>
   {% else %}
-    <div class="empty">لم تُنشأ مجموعات مختارة بعد. يمكن لأمين المكتبة تكوينها من لوحة الإدارة.</div>
+    <div class="empty">لم تُنشأ مجموعات مختارة بعد.</div>
   {% endif %}
 </div>
 {% endblock %}

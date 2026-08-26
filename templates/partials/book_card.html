@@ -1,25 +1,13 @@
-<article class="book-card">
-  <a class="cover" href="/كتب/{{ work.slug }}" aria-label="{{ work.title }}">
-    {% set c = cover_of(work) %}
-    {% if c %}
-      <img src="/أغلفة/{{ work.id }}" alt="" width="{{ c.width }}" height="{{ c.height }}" loading="lazy">
-    {% else %}
-      <div class="cover-fallback" aria-hidden="true">
-        <span class="cover-kicker">كتاب</span>
-        <span class="cover-title">{{ work.title }}</span>
-        <span class="cover-author">{{ primary_author(work) }}</span>
-      </div>
-    {% endif %}
-  </a>
-  <div class="book-body">
-    <a class="book-title" href="/كتب/{{ work.slug }}">{{ work.title }}</a>
-    <div class="book-author">{{ primary_author(work) }}</div>
-    <div class="book-meta">
+<a class="book-card" href="/كتب/{{ work.slug }}">
+  <span class="cover">{% include "partials/jacket.html" %}</span>
+  <span class="book-body">
+    <span class="book-title">{{ work.title }}</span>
+    <span class="book-author">{{ primary_author(work) }}</span>
+    <span class="book-meta">
       {% set cat = primary_category(work) %}
-      {% if cat %}<span class="meta-cat">{{ cat.name_ar }}</span>{% endif %}
+      {% if cat %}{{ cat.name_ar }}{% endif %}
       {% set fmts = formats_of(work) %}
-      {% if fmts %}<span class="meta-fmt">{{ fmts|join(' · ')|upper }}</span>{% endif %}
-    </div>
-    <a class="book-open" href="/كتب/{{ work.slug }}">افتح الكتاب</a>
-  </div>
-</article>
+      {% if fmts %}{% if cat %} · {% endif %}{{ fmts|join(' · ')|upper }}{% endif %}
+    </span>
+  </span>
+</a>

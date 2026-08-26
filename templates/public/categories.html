@@ -1,31 +1,29 @@
 {% extends "base.html" %}
-{% block title %}دليل التصنيفات — مكتبة أبو علياء الرقمية{% endblock %}
+{% block title %}التصنيفات — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap page-block">
+<div class="wrap page">
   <header class="page-head">
-    <p class="kicker">الدليل</p>
     <h1>التصنيفات</h1>
-    <p class="lede muted">تصفّح المعرفة بالعربية وفق موضوع الكتاب لا وفق كلمة عابرة في العنوان.</p>
+    <p class="lede muted">الموضوع الفعلي للكتاب، لا كلمة عابرة في العنوان.</p>
   </header>
   {% if not roots %}
     <div class="empty">لا تصنيفات منشورة حالياً.</div>
   {% endif %}
   {% for root in roots %}
-    <section class="cat-group">
+    <section class="cat-block">
       <div class="section-head">
         <h2><a href="/تصنيفات/{{ root.path }}">{{ root.name_ar }}</a></h2>
-        <small class="muted">{{ counts.get(root.id, 0) }} كتاباً</small>
+        <small>{{ counts.get(root.id, 0) }}</small>
       </div>
-      {% if root.description %}<p class="muted cat-desc">{{ root.description }}</p>{% endif %}
       {% if by_parent.get(root.id) %}
-      <div class="cats">
+      <ul class="cat-list">
         {% for child in by_parent.get(root.id, []) %}
-          <a class="cat-chip" href="/تصنيفات/{{ child.path }}">
-            <strong>{{ child.name_ar }}</strong>
-            <small>{{ counts.get(child.id, 0) }} كتاباً</small>
-          </a>
+          <li>
+            <a href="/تصنيفات/{{ child.path }}">{{ child.name_ar }}</a>
+            <small>{{ counts.get(child.id, 0) }}</small>
+          </li>
         {% endfor %}
-      </div>
+      </ul>
       {% endif %}
     </section>
   {% endfor %}

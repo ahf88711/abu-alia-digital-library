@@ -7,53 +7,43 @@
 </script>
 {% endblock %}
 {% block content %}
-<div class="wrap page-block">
+<div class="wrap page">
   <nav class="crumbs">
-    <a href="/">الرئيسية</a> /
+    <a href="/">الرئيسية</a>
     {% set cat = primary_category(work) %}
-    {% if cat %}<a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a> /{% endif %}
-    <span>{{ work.title }}</span>
+    {% if cat %}<span aria-hidden="true">/</span><a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a>{% endif %}
   </nav>
-  <article class="detail">
-    <div class="detail-cover">
-      {% set c = cover_of(work) %}
-      {% if c %}
-        <img src="/أغلفة/{{ work.id }}" alt="غلاف {{ work.title }}">
-      {% else %}
-        <div class="cover-fallback cover-fallback-lg" aria-hidden="true">
-          <span class="cover-kicker">كتاب</span>
-          <span class="cover-title">{{ work.title }}</span>
-          <span class="cover-author">{{ primary_author(work) }}</span>
-        </div>
-      {% endif %}
-    </div>
-    <div class="detail-body">
+  <article class="work">
+    <div class="work-cover">{% include "partials/jacket.html" %}</div>
+    <div class="work-main">
       <h1>{{ work.title }}</h1>
       {% if work.subtitle %}<p class="muted">{{ work.subtitle }}</p>{% endif %}
+      {% if work.contributors %}
       <p class="byline">
         {% for contrib in work.contributors %}
           <a href="/مؤلفون/{{ contrib.author.slug }}">{{ contrib.author.canonical_name }}</a>{% if not loop.last %}، {% endif %}
         {% endfor %}
       </p>
+      {% endif %}
+      {% if cat %}<p class="work-cat"><a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a></p>{% endif %}
       {% if work.description %}<p class="measure">{{ work.description|plain }}</p>{% endif %}
       <div class="actions">
-        {% if 'pdf' in formats_of(work) %}
-          <a class="btn" href="/قراءة/{{ work.slug }}/pdf">اقرأ PDF</a>
-          <a class="btn ghost" href="/ملفات/{{ work.slug }}/pdf?dl=1">تنزيل PDF</a>
-        {% endif %}
         {% if 'epub' in formats_of(work) %}
-          <a class="btn" href="/قراءة/{{ work.slug }}/epub">اقرأ EPUB</a>
-          <a class="btn ghost" href="/ملفات/{{ work.slug }}/epub?dl=1">تنزيل EPUB</a>
+          <a class="btn" href="/قراءة/{{ work.slug }}/epub">اقرأ الكتاب</a>
+          <a class="btn quiet" href="/ملفات/{{ work.slug }}/epub?dl=1">تنزيل EPUB</a>
+        {% endif %}
+        {% if 'pdf' in formats_of(work) %}
+          <a class="btn{% if 'epub' in formats_of(work) %} quiet{% endif %}" href="/قراءة/{{ work.slug }}/pdf">اقرأ PDF</a>
+          <a class="btn quiet" href="/ملفات/{{ work.slug }}/pdf?dl=1">تنزيل PDF</a>
         {% endif %}
         {% if user %}
           <form method="post" action="/مكتبتي/{{ work.slug }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn ghost" type="submit">{% if fav %}إزالة من مكتبتي{% else %}أضف إلى مكتبتي{% endif %}</button>
+            <button class="btn quiet" type="submit">{% if fav %}إزالة من مكتبتي{% else %}أضف إلى مكتبتي{% endif %}</button>
           </form>
         {% endif %}
       </div>
-      <dl class="meta-list">
-        {% if cat %}<div><dt>التصنيف</dt><dd><a href="/تصنيفات/{{ cat.path }}">{{ cat.name_ar }}</a></dd></div>{% endif %}
+      <dl class="facts">
         {% for ed in work.editions %}
           {% if ed.publisher %}<div><dt>الناشر</dt><dd>{{ ed.publisher.name }}</dd></div>{% endif %}
           {% if ed.year %}<div><dt>السنة</dt><dd>{{ ed.year }}</dd></div>{% endif %}
@@ -65,17 +55,16 @@
             <div><dt>{{ f.format|upper }}</dt><dd>{{ '%.1f'|format(f.size_bytes/1024/1024) }} م.ب</dd></div>
           {% endfor %}
         {% endfor %}
-        <div><dt>المشاهدات</dt><dd>{{ work.view_count }} · التنزيلات {{ work.download_count }}</dd></div>
       </dl>
     </div>
   </article>
   {% if same_author %}
   <div class="section-head"><h2>من المؤلف نفسه</h2></div>
-  <div class="grid">{% for work in same_author %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  <div class="books">{% for work in same_author %}{% include "partials/book_card.html" %}{% endfor %}</div>
   {% endif %}
   {% if related %}
   <div class="section-head"><h2>كتب ذات صلة</h2></div>
-  <div class="grid">{% for work in related %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  <div class="books">{% for work in related %}{% include "partials/book_card.html" %}{% endfor %}</div>
   {% endif %}
 </div>
 {% endblock %}

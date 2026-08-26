@@ -1,0 +1,12 @@
+{% set real = authentic_cover(work) %}
+{% if real %}
+  <img class="jacket-img" src="/أغلفة/{{ work.id }}" alt="" width="{{ real.width }}" height="{{ real.height }}" loading="lazy" decoding="async">
+{% else %}
+  <div class="jacket tone-{{ jacket_tone(work) }}" aria-hidden="true">
+    <span class="jacket-mark">◆</span>
+    {% set jcat = primary_category(work) %}
+    {% if jcat %}<span class="jacket-cat">{{ jcat.name_ar }}</span>{% endif %}
+    <span class="jacket-title">{{ work.title }}</span>
+    <span class="jacket-author">{{ primary_author(work) }}</span>
+  </div>
+{% endif %}

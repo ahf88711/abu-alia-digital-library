@@ -32,6 +32,21 @@ def cover_of(work: Work) -> Optional[Cover]:
     return work.covers[0] if work.covers else None
 
 
+def authentic_cover(work: Work) -> Optional[Cover]:
+    """Only return a cover that is not a generated placeholder."""
+    for cover in work.covers or []:
+        kind = (cover.kind or "").lower()
+        if kind and kind not in {"generated", "placeholder", "fallback"}:
+            return cover
+    return None
+
+
+def jacket_tone(work: Work) -> int:
+    cat = primary_category(work)
+    key = f"{cat.slug if cat else ''}:{work.id}"
+    return sum(ord(ch) for ch in key) % 6
+
+
 def primary_author(work: Work) -> str:
     if not work.contributors:
         return "مؤلف غير معروف"

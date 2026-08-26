@@ -1,24 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ category.name_ar }} — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap page-block">
-  <nav class="crumbs"><a href="/تصنيفات">التصنيفات</a> / {{ category.name_ar }}</nav>
+<div class="wrap page">
+  <nav class="crumbs"><a href="/تصنيفات">التصنيفات</a><span aria-hidden="true">/</span>{{ category.name_ar }}</nav>
   <header class="page-head">
     <h1>{{ category.name_ar }}</h1>
     {% if category.description %}<p class="lede muted">{{ category.description }}</p>{% endif %}
   </header>
   {% if children %}
-  <div class="cats cats-compact">
+  <div class="cat-scroll">
     {% for child in children %}
-      <a class="cat-chip" href="/تصنيفات/{{ child.path }}">
-        <strong>{{ child.name_ar }}</strong>
-        {% if counts %}<small>{{ counts.get(child.id, 0) }} كتاباً</small>{% endif %}
+      <a class="pill" href="/تصنيفات/{{ child.path }}">
+        {{ child.name_ar }}
+        {% if counts %}<small>{{ counts.get(child.id, 0) }}</small>{% endif %}
       </a>
     {% endfor %}
   </div>
   {% endif %}
   {% if works %}
-  <div class="grid">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  <div class="books">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
   <nav class="pager" aria-label="ترقيم الصفحات">
     {% if page>1 %}<a href="?page={{ page-1 }}">السابق</a>{% endif %}
     <span>{{ page }} / {{ pages }}</span>

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{{ author.canonical_name }} — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap">
-  <nav class="crumbs"><a href="/مؤلفون">المؤلفون</a> / {{ author.canonical_name }}</nav>
-  <h1>{{ author.canonical_name }}</h1>
-  {% if author.biography %}<p>{{ author.biography }}</p>{% endif %}
-  <p class="muted">{{ works|length }} كتاباً</p>
+<div class="wrap page">
+  <nav class="crumbs"><a href="/مؤلفون">المؤلفون</a><span aria-hidden="true">/</span>{{ author.canonical_name }}</nav>
+  <header class="page-head">
+    <h1>{{ author.canonical_name }}</h1>
+    {% if author.biography %}<p class="measure">{{ author.biography }}</p>{% endif %}
+  </header>
   {% if works %}
-  <div class="grid">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
+  <div class="books">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
   <nav class="pager">
     {% if page>1 %}<a href="?page={{ page-1 }}">السابق</a>{% endif %}
     <span>{{ page }} / {{ pages }}</span>

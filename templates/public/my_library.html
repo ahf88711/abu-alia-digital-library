@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block title %}مكتبتي — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap">
-  <h1 style="margin-top:1.2rem">مكتبتي</h1>
+<div class="wrap page">
+  <header class="page-head"><h1>مكتبتي</h1></header>
   {% if not user %}
-    <div class="notice">سجّل الدخول لحفظ المفضلة. <a href="/دخول">دخول</a> أو <a href="/تسجيل">إنشاء حساب</a>.</div>
+    <p class="muted">سجّل الدخول لحفظ المفضلة. <a href="/دخول">دخول</a> أو <a href="/تسجيل">إنشاء حساب</a>.</p>
   {% elif works %}
-    <div class="grid">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
+    <div class="books">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>
   {% else %}
-    <div class="empty">لا كتب في المفضلة بعد. أضفها من صفحة الكتاب.</div>
+    <div class="empty">لا كتب في المفضلة بعد.</div>
   {% endif %}
 </div>
 {% endblock %}

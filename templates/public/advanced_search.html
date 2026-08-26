@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}بحث متقدم — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap">
-  <h1 style="margin-top:1.2rem">البحث المتقدم</h1>
-  <form action="/بحث" method="get" class="section">
+<div class="wrap page measure-page">
+  <header class="page-head"><h1>بحث متقدم</h1></header>
+  <form action="/بحث" method="get" class="stack">
     <p><label>العبارة<br><input type="search" name="q" required></label></p>
     <p><label>التصنيف<br>
       <select name="cat">
@@ -27,7 +27,7 @@
         <option value="downloads">الأكثر تحميلاً</option>
       </select>
     </label></p>
-    <button class="btn" type="submit">تنفيذ البحث</button>
+    <button class="btn" type="submit">بحث</button>
   </form>
 </div>
 {% endblock %}

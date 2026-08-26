@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block title %}بحث — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
-<div class="wrap page-block">
+<div class="wrap page">
   <header class="page-head">
     <h1>البحث</h1>
   </header>
-  <form class="search-hero" action="/بحث" method="get" role="search">
+  <form class="seek seek-page" action="/بحث" method="get" role="search">
     <label class="sr-only" for="q-search">عبارة البحث</label>
-    <input id="q-search" type="search" name="q" value="{{ q }}" placeholder="عنوان، مؤلف، موضوع…">
-    <button class="btn" type="submit">ابحث</button>
+    <input id="q-search" type="search" name="q" value="{{ q }}" placeholder="عنوان، مؤلف، موضوع…" enterkeyhint="search">
+    <button type="submit">ابحث</button>
   </form>
   <form class="filters" method="get">
     <input type="hidden" name="q" value="{{ q }}">
@@ -32,21 +32,20 @@
       <option value="downloads" {% if sort=='downloads' %}selected{% endif %}>الأكثر تحميلاً</option>
       <option value="views" {% if sort=='views' %}selected{% endif %}>الأكثر مشاهدة</option>
     </select>
-    <button class="btn ghost" type="submit">تصفية</button>
-    <a class="btn ghost" href="/بحث-متقدم">بحث متقدم</a>
+    <button class="btn quiet" type="submit">تصفية</button>
   </form>
   {% if q and result.total == 0 %}
-    <div class="empty">لا نتائج لـ «{{ q }}». جرّب إزالة التشكيل أو جزءاً من العنوان.</div>
+    <div class="empty">لا نتائج لـ «{{ q }}». جرّب جزءاً من العنوان أو اسم المؤلف.</div>
   {% elif result['items'] %}
-    <p class="muted result-count">{{ result.total }} نتيجة</p>
-    <div class="grid">{% for work in result['items'] %}{% include "partials/book_card.html" %}{% endfor %}</div>
+    <p class="muted">{{ result.total }} نتيجة</p>
+    <div class="books">{% for work in result['items'] %}{% include "partials/book_card.html" %}{% endfor %}</div>
     <nav class="pager" aria-label="ترقيم الصفحات">
       {% if page>1 %}<a href="?q={{ q }}&page={{ page-1 }}">السابق</a>{% endif %}
       <span>{{ page }} / {{ pages }}</span>
       {% if page<pages %}<a href="?q={{ q }}&page={{ page+1 }}">التالي</a>{% endif %}
     </nav>
   {% elif not q %}
-    <div class="notice">اكتب كلمة أو جزءاً من عنوان عربي.</div>
+    <p class="muted">اكتب كلمة أو جزءاً من عنوان عربي.</p>
   {% endif %}
 </div>
 {% endblock %}

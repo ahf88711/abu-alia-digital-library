@@ -14,6 +14,10 @@ def test_home(client):
     assert "التصنيفات" in r.text
     assert "الزيارات:" in r.text
     assert "family=Amiri" in r.text or "Amiri" in r.text
+    assert "تواصل معنا" not in r.text
+    assert "الحقوق والتراخيص" not in r.text
+    assert 'href="/تواصل"' not in r.text
+    assert 'href="/الحقوق"' not in r.text
     assert r.headers.get("x-content-type-options") == "nosniff"
     assert "Permissions-Policy" in r.headers or r.headers.get("permissions-policy")
 
@@ -43,8 +47,6 @@ def test_static_pages(client):
         "/مجموعات",
         "/مكتبتي",
         "/عن-المكتبة",
-        "/تواصل",
-        "/الحقوق",
         "/الخصوصية",
         "/الشروط",
         "/دخول",
@@ -87,7 +89,26 @@ def test_sitemap(client):
     assert "urlset" in r.text or "sitemapindex" in r.text
 
 
-def test_bottom_nav_present(client):
+def test_mobile_dock_present(client):
     r = client.get("/")
-    assert "bottom-nav" in r.text
+    assert 'class="dock"' in r.text
     assert "مكتبتي" in r.text
+
+
+def test_retired_public_pages(client):
+    from urllib.parse import unquote
+
+    for path in ("/تواصل", "/الحقوق"):
+        r = client.get(path, follow_redirects=False)
+        assert r.status_code in (301, 302, 303, 307, 308), path
+        assert "عن-المكتبة" in unquote(r.headers.get("location") or "")
+
+
+def test_layout_css_is_mobile_first(client):
+    r = client.get("/static/css/library.css")
+    assert r.status_code == 200
+    css = r.text
+    assert "repeat(2, minmax(0, 1fr))" in css
+    assert "overflow-x: clip" in css
+    assert ".jacket" in css
+    assert "prefers-reduced-motion" in css

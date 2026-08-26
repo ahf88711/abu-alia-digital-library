@@ -17,7 +17,6 @@ from abu_alia.auth.passwords import hash_password, verify_password
 from abu_alia.auth.sessions import clear_session, set_session, user_id_from_request
 from abu_alia.config import ROOT, get_settings
 from abu_alia.db.models import (
-    AuditLog,
     Author,
     Category,
     Collection,
@@ -43,8 +42,10 @@ from abu_alia.seed import seed_all
 from abu_alia.storage.backend import storage_from_settings
 from abu_alia.web.deps import get_current_user, get_db, require_admin, require_user
 from abu_alia.web.helpers import (
+    authentic_cover,
     cover_of,
     formats_of,
+    jacket_tone,
     load_works_ordered,
     page_ids,
     paginate,
@@ -66,6 +67,16 @@ app = FastAPI(title="مكتبة أبو علياء الرقمية", version=__ver
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 templates.env.filters["plain"] = plain_text
+templates.env.globals.update(
+    {
+        "cover_of": cover_of,
+        "authentic_cover": authentic_cover,
+        "jacket_tone": jacket_tone,
+        "formats_of": formats_of,
+        "primary_author": primary_author,
+        "primary_category": primary_category,
+    }
+)
 
 
 def _ctx(request: Request, **kwargs):
@@ -187,7 +198,6 @@ SITEMAP_STATIC = (
     "/مؤلفون",
     "/بحث",
     "/عن-المكتبة",
-    "/الحقوق",
     "/الخصوصية",
     "/الشروط",
 )
@@ -244,12 +254,8 @@ def sitemap_page(page: int, db: Session = Depends(get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
-    latest = db.execute(work_query(db).order_by(Work.published_at.desc(), Work.id.desc()).limit(12)).scalars().unique().all()
-    popular = db.execute(work_query(db).order_by(Work.download_count.desc(), Work.view_count.desc()).limit(8)).scalars().unique().all()
-    viewed = db.execute(work_query(db).order_by(Work.view_count.desc()).limit(8)).scalars().unique().all()
-    featured = db.execute(work_query(db).where(Work.featured.is_(True)).limit(8)).scalars().unique().all()
+    latest = db.execute(work_query(db).order_by(Work.published_at.desc(), Work.id.desc()).limit(16)).scalars().unique().all()
     cats, _by_parent, cat_counts = public_category_index(db)
-    authors = db.execute(select(Author).order_by(Author.id.desc()).limit(8)).scalars().all()
     book_count = db.execute(select(func.count()).select_from(Work).where(Work.publication_status == "published")).scalar() or 0
     author_count = db.execute(select(func.count()).select_from(Author)).scalar() or 0
     return templates.TemplateResponse(
@@ -257,12 +263,8 @@ def home(request: Request, db: Session = Depends(get_db)):
         _ctx(
             request,
             latest=latest,
-            popular=popular,
-            viewed=viewed,
-            featured=featured or latest[:4],
             categories=cats,
             category_counts=cat_counts,
-            authors=authors,
             book_count=book_count,
             author_count=author_count,
             primary_author=primary_author,
@@ -632,34 +634,15 @@ def about(request: Request):
     return templates.TemplateResponse("public/about.html", _ctx(request))
 
 
-@app.get("/تواصل", response_class=HTMLResponse)
-def contact_get(request: Request):
-    return templates.TemplateResponse("public/contact.html", _ctx(request, sent=False))
+@app.get("/تواصل")
+@app.post("/تواصل")
+def contact_retired():
+    return RedirectResponse("/عن-المكتبة", status_code=301)
 
 
-@app.post("/تواصل", response_class=HTMLResponse)
-def contact_post(
-    request: Request,
-    db: Session = Depends(get_db),
-    الاسم: str = Form(...),
-    البريد: str = Form(""),
-    الرسالة: str = Form(...),
-    _: None = Depends(csrf_protect),
-):
-    db.add(
-        AuditLog(
-            action="contact",
-            entity_type="message",
-            payload={"name": الاسم[:200], "email": البريد[:200], "message": الرسالة[:4000]},
-            ip=request.client.host if request.client else None,
-        )
-    )
-    return templates.TemplateResponse("public/contact.html", _ctx(request, sent=True))
-
-
-@app.get("/الحقوق", response_class=HTMLResponse)
-def licenses_page(request: Request):
-    return templates.TemplateResponse("public/licenses.html", _ctx(request))
+@app.get("/الحقوق")
+def licenses_retired():
+    return RedirectResponse("/عن-المكتبة", status_code=301)
 
 
 @app.get("/الخصوصية", response_class=HTMLResponse)
