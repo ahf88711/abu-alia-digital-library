@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/library.css?v=15">
+  <link rel="stylesheet" href="/static/css/library.css?v=16">
   {% block extra_head %}{% endblock %}
 </head>
 <body class="{% if nav == '/' %}is-home{% endif %}">
@@ -19,11 +19,8 @@
 <header class="topbar">
   <div class="topbar-inner">
     <a class="brand" href="/">
-      <span class="mark" aria-hidden="true">◆</span>
-      <span class="brand-text">
-        <strong>مكتبة أبو علياء</strong>
-        <em>الرقمية</em>
-      </span>
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">مكتبة أبو علياء الرقمية</span>
     </a>
     {% if nav != '/' %}
     <form class="seek" action="/بحث" method="get" role="search">

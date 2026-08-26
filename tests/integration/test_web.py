@@ -9,7 +9,10 @@ def _csrf(client) -> str:
 def test_home(client):
     r = client.get("/")
     assert r.status_code == 200
-    assert "مكتبة أبو علياء" in r.text
+    assert "مكتبة أبو علياء الرقمية" in r.text
+    assert r.text.count("مكتبة أبو علياء الرقمية") >= 2
+    assert "<em>الرقمية</em>" not in r.text
+    assert "<h1>مكتبة أبو علياء الرقمية</h1>" in r.text
     assert 'dir="rtl"' in r.text
     assert "الزيارات:" in r.text
     assert "family=Amiri" in r.text or "Amiri" in r.text
@@ -114,3 +117,6 @@ def test_layout_css_is_mobile_first(client):
     assert "overflow-x: clip" in css
     assert ".jacket" in css
     assert "prefers-reduced-motion" in css
+    assert "#722f28" not in css
+    assert "#efe3ce" not in css
+    assert "--hero:" in css

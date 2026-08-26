@@ -4,27 +4,31 @@
 <section class="gate">
   <div class="wrap gate-inner">
     <p class="kicker">مكتبة عربية للقراءة المباشرة</p>
-    <h1>مكتبة أبو علياء</h1>
+    <h1>مكتبة أبو علياء الرقمية</h1>
     <p class="lede">كتب مؤهلة تُستضاف هنا وتُقرأ من هنا.</p>
+    <p class="census"><b>{{ book_count }}</b> كتاباً منشوراً</p>
     <form class="seek seek-home" action="/بحث" method="get" role="search">
       <label class="sr-only" for="q-home">بحث في المكتبة</label>
       <input id="q-home" type="search" name="q" placeholder="ابحث بالعنوان أو المؤلف…" required enterkeyhint="search">
       <button type="submit">بحث</button>
     </form>
-    <p class="census">{{ book_count }} كتاباً منشوراً</p>
   </div>
 </section>
 
 {% if categories %}
 <section class="gate-cats">
   <div class="wrap">
-    <h2 class="sr-only">التصنيفات الرئيسة</h2>
+    <div class="section-head">
+      <h2>التصنيفات الرئيسة</h2>
+    </div>
     <div class="gates">
       {% for c in categories %}
         <a class="gate-card{% if c.slug == 'unclassified' %} is-quiet{% endif %}" href="/تصنيفات/{{ c.path }}">
           <span class="gate-ico">{% with slug=c.slug %}{% include "partials/cat_icon.html" %}{% endwith %}</span>
-          <span class="gate-name">{{ c.name_ar }}</span>
-          <span class="gate-n">{{ category_counts.get(c.id, 0) }} كتاباً</span>
+          <span class="gate-copy">
+            <span class="gate-name">{{ c.name_ar }}</span>
+            <span class="gate-n">{{ category_counts.get(c.id, 0) }} كتاباً</span>
+          </span>
         </a>
       {% endfor %}
     </div>
