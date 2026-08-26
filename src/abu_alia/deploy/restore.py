@@ -80,6 +80,26 @@ def _storage_looks_populated(root: Path) -> bool:
     return False
 
 
+def snapshot_marker_path(data_root: Path) -> Path:
+    return Path(data_root) / ".catalog_snapshot_id"
+
+
+def snapshot_is_stale(data_root: Path, expected: str) -> bool:
+    if not expected:
+        return False
+    marker = snapshot_marker_path(data_root)
+    current = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+    return current != expected
+
+
+def write_snapshot_marker(data_root: Path, snapshot_id: str) -> None:
+    if not snapshot_id:
+        return
+    path = snapshot_marker_path(data_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(snapshot_id, encoding="utf-8")
+
+
 def restore_catalog(*, force: bool = False) -> dict:
     """Copy the existing harvested catalog into an empty production data dir.
 
@@ -92,11 +112,13 @@ def restore_catalog(*, force: bool = False) -> dict:
     storage_root = Path(settings.storage_root)
     db_url_snapshot = settings.catalog_snapshot_db or DEFAULT_DB_SNAPSHOT
     storage_snapshot = settings.catalog_snapshot_storage or DEFAULT_STORAGE_SNAPSHOT
+    snapshot_id = (settings.catalog_snapshot_id or "").strip()
     result = {
         "db": "skipped",
         "storage": "skipped",
         "db_path": str(db_path),
         "storage_root": str(storage_root),
+        "snapshot_id": snapshot_id,
     }
 
     if db_path is None:
@@ -105,6 +127,12 @@ def restore_catalog(*, force: bool = False) -> dict:
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     storage_root.mkdir(parents=True, exist_ok=True)
+
+    stale = snapshot_is_stale(settings.data_root, snapshot_id)
+    if stale and (force or settings.restore_on_boot or settings.is_production):
+        log.info("catalog snapshot id changed (%s); replacing populated catalog", snapshot_id)
+        force = True
+    result["stale"] = stale
 
     if not force and _db_looks_populated(db_path):
         log.info("catalog already populated at %s; not replacing", db_path)
@@ -121,7 +149,7 @@ def restore_catalog(*, force: bool = False) -> dict:
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
 
-    if not settings.restore_storage and not force:
+    if not settings.restore_storage:
         result["storage"] = "disabled"
     elif not force and _storage_looks_populated(storage_root):
         log.info("object storage already populated at %s; not replacing", storage_root)
@@ -137,6 +165,11 @@ def restore_catalog(*, force: bool = False) -> dict:
             log.info("restored object storage under %s", storage_root)
         finally:
             shutil.rmtree(tmpdir, ignore_errors=True)
+
+    replaced = result["db"] == "restored" or result["storage"] == "restored"
+    if snapshot_id and (replaced or not stale):
+        write_snapshot_marker(settings.data_root, snapshot_id)
+        result["marker"] = snapshot_id
 
     os.environ.setdefault("ABU_ALIA_RESTORED", "1")
     return result

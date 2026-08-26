@@ -21,6 +21,7 @@ data/cache/
 data/backups/
 data/visitor_count.json
 data/harvest_checkpoint.json
+data/.catalog_snapshot_id
 *.log
 dist/
 build/

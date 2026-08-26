@@ -95,6 +95,9 @@ def _validate_epub(path: Path, size: int, expected: Optional[str]) -> ValidatedF
                 raise FileValidationError("not_epub", "نوع EPUB غير صحيح")
             if not any(n.endswith("content.opf") or n.endswith(".opf") for n in names):
                 raise FileValidationError("not_epub", "ملف EPUB بلا توصيف OPF")
+            broken = zf.testzip()
+            if broken is not None:
+                raise FileValidationError("corrupt", f"عضو تالف داخل EPUB: {broken}")
     except FileValidationError:
         raise
     except zipfile.BadZipFile as exc:

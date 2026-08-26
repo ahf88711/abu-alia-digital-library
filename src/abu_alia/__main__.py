@@ -124,6 +124,30 @@ def cmd_reclassify(args: argparse.Namespace) -> None:
         print("quality", {k: quality[k] for k in quality if k != "duplicate_examples" and k != "missing_storage_examples"})
 
 
+def cmd_audit_epubs(args: argparse.Namespace) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from abu_alia.ingestion.rebuild_epub import audit_epubs
+
+    settings = get_settings()
+    init_db(settings)
+    with session_scope() as session:
+        result = audit_epubs(session, settings.storage_root, limit=args.limit)
+        result = dict(result)
+        result["affected"] = len(result.pop("affected_ids"))
+        print(result)
+
+
+def cmd_rebuild_epubs(args: argparse.Namespace) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    from abu_alia.ingestion.rebuild_epub import rebuild_capped_epubs
+
+    settings = get_settings()
+    init_db(settings)
+    with session_scope() as session:
+        stats = rebuild_capped_epubs(session, limit=args.limit)
+        print(stats)
+
+
 def cmd_collections(_args: argparse.Namespace) -> None:
     from abu_alia.catalog.collections import refresh_featured_collections
 
@@ -172,6 +196,12 @@ def main() -> None:
     p_re = sub.add_parser("reclassify")
     p_re.add_argument("--force", action="store_true")
     p_re.set_defaults(func=cmd_reclassify)
+    p_ae = sub.add_parser("audit-epubs")
+    p_ae.add_argument("--limit", type=int, default=None)
+    p_ae.set_defaults(func=cmd_audit_epubs)
+    p_be = sub.add_parser("rebuild-epubs")
+    p_be.add_argument("--limit", type=int, default=None)
+    p_be.set_defaults(func=cmd_rebuild_epubs)
     args = parser.parse_args()
     args.func(args)
 

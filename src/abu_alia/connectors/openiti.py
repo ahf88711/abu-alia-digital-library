@@ -163,15 +163,20 @@ class OpenITIConnector(HttpMixin):
         if len(text.strip()) < 80:
             raise RetryableHTTPError("openiti text too short")
         guessed_title, chapters = mARkdown_to_chapters(text)
+        author = (remote.extra or {}).get("author") or "OpenITI"
+        title = (remote.extra or {}).get("title") or guessed_title or dest.stem
         build_epub(
             dest,
-            title=guessed_title or dest.stem,
-            author="OpenITI",
+            title=title,
+            author=author,
             identifier="openiti:" + dest.stem,
-            chapters=chapters[:80],
+            chapters=chapters,
             attribution=(
                 "النص من مدونة OpenITI المرخّصة برخصة المشاع الإبداعي "
                 "نسب المصنف — غير تجاري — الترخيص بالمثل 4.0."
             ),
         )
+        from abu_alia.storage.validate import validate_book_file
+
+        validate_book_file(dest, expected="epub")
         return dest

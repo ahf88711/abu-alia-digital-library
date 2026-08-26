@@ -58,7 +58,7 @@ def wikitext_to_chapters(text: str) -> List[Tuple[str, str]]:
         if not paras:
             continue
         html_chapters.append(
-            (title[:180], "".join(f"<p>{html.escape(p)}</p>" for p in paras[:2000]))
+            (title[:180], "".join(f"<p>{html.escape(p)}</p>" for p in paras))
         )
     return html_chapters
 
@@ -174,10 +174,13 @@ class WikisourceArConnector(HttpMixin):
             title=title,
             author="ويكي مصدر",
             identifier="wikisource-ar:" + title,
-            chapters=chapters[:80],
+            chapters=chapters,
             attribution=(
                 "النص من ويكي مصدر العربية، مرخّص برخصة المشاع الإبداعي "
                 "نسب المصنف — الترخيص بالمثل 3.0."
             ),
         )
+        from abu_alia.storage.validate import validate_book_file
+
+        validate_book_file(dest, expected="epub")
         return dest

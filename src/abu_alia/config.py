@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     catalog_snapshot_storage: Optional[str] = (
         "https://github.com/ahf88711/abu-alia-digital-library/releases/download/catalog-4024/storage.tar"
     )
+    catalog_snapshot_id: str = "1.4.0-epub-complete"
     restore_on_boot: bool = False
     restore_storage: bool = True
     admin_email: str = "admin@localhost"
@@ -49,7 +50,7 @@ class Settings(BaseSettings):
     session_days: int = 14
     max_file_bytes: int = 40 * 1024 * 1024
     max_epub_uncompressed_bytes: int = 120 * 1024 * 1024
-    max_epub_files: int = 4000
+    max_epub_files: int = 8000
     worker_id: str = "worker-1"
     worker_concurrency: int = 1
     job_poll_seconds: float = 1.5
