@@ -14,6 +14,7 @@
 - **file sample:** 80/80 valid EPUB/PDF; 0 sha256 collisions in sample
 - **architecture:** modular FastAPI monolith; OpenITI CC BY-NC-SA; IA untrusted PD marks quarantined
 - **GitHub:** https://github.com/ahf88711/abu-alia-digital-library
-- **deployment:** production public URL not claimed without hosting credentials
-- **blockers:** public hosting/S3 credentials (Render/Fly/Railway)
-- **next:** keep the local catalog; Wikisource/OAPEN remain disabled unless more legitimate unique books are needed; do not duplicate existing works
+- **public site:** https://abu-alia-digital-library.onrender.com
+- **production catalog:** 4024 published (verified `/api/stats`, homepage, `/كتب` pager 1/168, EPUB 206)
+- **deployment note:** empty Render disk was the cause; `restore-catalog` copies the existing snapshot (GitHub Release `catalog-4024`) when the data dir is empty. Harvest was not restarted.
+- **next:** keep the catalog; do not duplicate or invent books
