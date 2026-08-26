@@ -14,7 +14,6 @@ from abu_alia.classification.engine import (
     select_assignments,
 )
 from abu_alia.db.models import Category, SourceItem, SystemSetting, Work, WorkCategory, WorkContributor
-from abu_alia.taxonomy.data import TAXONOMY
 
 VERSION_KEY = "classification_version"
 
@@ -64,21 +63,9 @@ def ensure_unclassified(session: Session) -> Category:
 
 
 def refresh_taxonomy_triggers(session: Session) -> None:
-    def walk(nodes: List[Dict[str, Any]], prefix: str) -> None:
-        for node in nodes:
-            slug = node["slug"]
-            path = f"{prefix}/{slug}" if prefix else slug
-            row = session.execute(select(Category).where(Category.slug == slug)).scalar_one_or_none()
-            if row:
-                row.triggers = node.get("triggers") or [node["name"]]
-                row.path = path
-                row.name_ar = node["name"]
-                row.name_normalized = normalize_search(node["name"])
-                if node.get("description"):
-                    row.description = node["description"]
-            walk(node.get("children") or [], path)
+    from abu_alia.seed import sync_taxonomy
 
-    walk(TAXONOMY, "")
+    sync_taxonomy(session)
     ensure_unclassified(session)
 
 

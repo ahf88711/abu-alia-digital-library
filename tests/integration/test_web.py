@@ -11,9 +11,11 @@ def test_home(client):
     assert r.status_code == 200
     assert "مكتبة أبو علياء" in r.text
     assert 'dir="rtl"' in r.text
-    assert "التصنيفات" in r.text
     assert "الزيارات:" in r.text
     assert "family=Amiri" in r.text or "Amiri" in r.text
+    assert "book-card" not in r.text
+    assert "jacket tone-" not in r.text
+    assert r.text.count('type="search"') == 1
     assert "تواصل معنا" not in r.text
     assert "الحقوق والتراخيص" not in r.text
     assert 'href="/تواصل"' not in r.text

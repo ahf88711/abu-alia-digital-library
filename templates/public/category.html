@@ -2,20 +2,24 @@
 {% block title %}{{ category.name_ar }} — مكتبة أبو علياء الرقمية{% endblock %}
 {% block content %}
 <div class="wrap page">
-  <nav class="crumbs"><a href="/تصنيفات">التصنيفات</a><span aria-hidden="true">/</span>{{ category.name_ar }}</nav>
+  <nav class="crumbs">
+    <a href="/تصنيفات">التصنيفات</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ category.name_ar }}</span>
+  </nav>
   <header class="page-head">
     <h1>{{ category.name_ar }}</h1>
     {% if category.description %}<p class="lede muted">{{ category.description }}</p>{% endif %}
   </header>
   {% if children %}
-  <div class="cat-scroll">
+  <nav class="subcats" aria-label="التصنيفات الفرعية">
     {% for child in children %}
       <a class="pill" href="/تصنيفات/{{ child.path }}">
         {{ child.name_ar }}
         {% if counts %}<small>{{ counts.get(child.id, 0) }}</small>{% endif %}
       </a>
     {% endfor %}
-  </div>
+  </nav>
   {% endif %}
   {% if works %}
   <div class="books">{% for work in works %}{% include "partials/book_card.html" %}{% endfor %}</div>

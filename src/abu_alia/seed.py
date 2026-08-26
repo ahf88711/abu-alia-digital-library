@@ -232,15 +232,18 @@ def _seed_sources(session: Session) -> None:
         session.add(Source(**data))
 
 
-def _seed_taxonomy(session: Session) -> None:
+def sync_taxonomy(session: Session) -> None:
+    """Create or update the category tree, including parent/path changes."""
+
     def walk(nodes: List[Dict[str, Any]], parent: Optional[Category], prefix: str) -> None:
         for i, node in enumerate(nodes):
             slug = node["slug"]
             path = f"{prefix}/{slug}" if prefix else slug
             existing = session.execute(select(Category).where(Category.slug == slug)).scalar_one_or_none()
+            parent_id = parent.id if parent else None
             if existing is None:
                 existing = Category(
-                    parent_id=parent.id if parent else None,
+                    parent_id=parent_id,
                     slug=slug,
                     name_ar=node["name"],
                     name_normalized=normalize_search(node["name"]),
@@ -252,17 +255,21 @@ def _seed_taxonomy(session: Session) -> None:
                 session.add(existing)
                 session.flush()
             else:
+                existing.parent_id = parent_id
                 existing.triggers = node.get("triggers") or [node["name"]]
                 existing.path = path
                 existing.name_ar = node["name"]
                 existing.name_normalized = normalize_search(node["name"])
+                existing.sort_order = i
                 if node.get("description"):
                     existing.description = node["description"]
-                if parent is not None and existing.parent_id is None:
-                    existing.parent_id = parent.id
             walk(node.get("children") or [], existing, path)
 
     walk(TAXONOMY, None, "")
+
+
+def _seed_taxonomy(session: Session) -> None:
+    sync_taxonomy(session)
 
 
 def _seed_admin(session: Session) -> None:

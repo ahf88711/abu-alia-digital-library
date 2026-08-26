@@ -4,7 +4,7 @@
 <div class="wrap page">
   <header class="page-head">
     <h1>التصنيفات</h1>
-    <p class="lede muted">الموضوع الفعلي للكتاب، لا كلمة عابرة في العنوان.</p>
+    <p class="lede muted">أبواب رئيسة، ثم موضوعات أدق حيث وُجدت كتب فعلية.</p>
   </header>
   {% if not roots %}
     <div class="empty">لا تصنيفات منشورة حالياً.</div>
@@ -13,7 +13,7 @@
     <section class="cat-block">
       <div class="section-head">
         <h2><a href="/تصنيفات/{{ root.path }}">{{ root.name_ar }}</a></h2>
-        <small>{{ counts.get(root.id, 0) }}</small>
+        <small>{{ counts.get(root.id, 0) }} كتاباً</small>
       </div>
       {% if by_parent.get(root.id) %}
       <ul class="cat-list">

@@ -11,10 +11,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Aref+Ruqaa:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/library.css?v=12">
+  <link rel="stylesheet" href="/static/css/library.css?v=13">
   {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body class="{% if nav == '/' %}is-home{% endif %}">
 <a class="skip" href="#main">تخطّ إلى المحتوى</a>
 <header class="topbar">
   <div class="topbar-inner">
@@ -25,11 +25,13 @@
         <em>الرقمية</em>
       </span>
     </a>
+    {% if nav != '/' %}
     <form class="seek" action="/بحث" method="get" role="search">
       <label class="sr-only" for="q-top">بحث في المكتبة</label>
       <input id="q-top" type="search" name="q" placeholder="عنوان أو مؤلف…" value="{{ q|default('') }}" enterkeyhint="search">
       <button type="submit" aria-label="بحث">بحث</button>
     </form>
+    {% endif %}
     <nav class="desk-nav" aria-label="القائمة الرئيسية">
       <a href="/كتب" {% if nav.startswith('/كتب') %}aria-current="page"{% endif %}>الكتب</a>
       <a href="/تصنيفات" {% if nav.startswith('/تصنيف') %}aria-current="page"{% endif %}>التصنيفات</a>

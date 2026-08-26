@@ -254,23 +254,15 @@ def sitemap_page(page: int, db: Session = Depends(get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
-    latest = db.execute(work_query(db).order_by(Work.published_at.desc(), Work.id.desc()).limit(16)).scalars().unique().all()
     cats, _by_parent, cat_counts = public_category_index(db)
     book_count = db.execute(select(func.count()).select_from(Work).where(Work.publication_status == "published")).scalar() or 0
-    author_count = db.execute(select(func.count()).select_from(Author)).scalar() or 0
     return templates.TemplateResponse(
         "public/home.html",
         _ctx(
             request,
-            latest=latest,
             categories=cats,
             category_counts=cat_counts,
             book_count=book_count,
-            author_count=author_count,
-            primary_author=primary_author,
-            primary_category=primary_category,
-            formats_of=formats_of,
-            cover_of=cover_of,
         ),
     )
 

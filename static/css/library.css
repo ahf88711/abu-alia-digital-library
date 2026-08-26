@@ -164,6 +164,48 @@ p { margin: 0 0 .85rem; }
   outline-offset: 2px;
 }
 
+.is-home .topbar .seek { display: none; }
+.is-home .topbar-inner { justify-content: space-between; }
+.gate { padding: 1.4rem 0 1.1rem; }
+.gate-inner { max-width: 36rem; }
+.gate h1 { margin-bottom: .25rem; }
+.seek-home { margin: 1rem 0 .7rem; }
+.seek-home input { min-height: 48px; font-size: 1.02rem; }
+.gate-cats { padding: 0 0 2rem; }
+.gates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+}
+.gate-card {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: .55rem;
+  row-gap: .05rem;
+  align-items: center;
+  background: var(--sheet);
+  color: var(--ink);
+  padding: .7rem .75rem;
+  min-height: 64px;
+  border-inline-start: 3px solid var(--olive);
+}
+.gate-card:hover { color: var(--ink); background: var(--sage); }
+.gate-ico { grid-row: 1 / span 2; display: grid; place-items: center; color: var(--olive); }
+.cat-icon { width: 1.35rem; height: 1.35rem; display: block; }
+.gate-name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.3;
+}
+.gate-n { color: var(--mute); font-size: .78rem; }
+.gate-card.is-quiet { border-inline-start-color: var(--line); }
+.gate-card.is-quiet .gate-ico { color: var(--mute); }
+.subcats {
+  display: flex; flex-wrap: wrap; gap: .4rem;
+  margin: 0 0 1.1rem;
+}
 .intro { padding: 1.15rem 0 .4rem; }
 .band { padding: .85rem 0 1.15rem; }
 .section-head {
@@ -441,6 +483,7 @@ footer.site {
 .reader-shell.night .reader-stage { background: #0e1116; }
 
 @media (min-width: 640px) {
+  .gates { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
   .books, .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.1rem .8rem; }
   .cat-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .work { grid-template-columns: 150px minmax(0, 1fr); }
@@ -460,7 +503,9 @@ footer.site {
   .topbar-inner { min-height: 62px; }
   .brand-text strong { font-size: 1.08rem; }
   .books, .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gates { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .intro { padding: 1.8rem 0 .6rem; }
+  .gate { padding: 2.2rem 0 1.4rem; }
   .work { grid-template-columns: 180px minmax(0, 1fr); gap: 1.4rem; }
   .stat-grid { grid-template-columns: repeat(4, 1fr); }
   .cat-scroll { flex-wrap: wrap; overflow: visible; }
