@@ -120,3 +120,8 @@ def test_layout_css_is_mobile_first(client):
     assert "#722f28" not in css
     assert "#efe3ce" not in css
     assert "--hero:" in css
+    assert '--display: "Amiri", "Noto Naskh Arabic", serif' in css
+    assert '--body: "Noto Naskh Arabic", "Amiri", serif' in css
+    assert '--kicker: "Aref Ruqaa", "Amiri", serif' in css
+    assert "clamp(1.7rem, 6vw, 2.55rem)" in css
+    assert "clamp(1.2rem, 3vw, 1.55rem)" in css
